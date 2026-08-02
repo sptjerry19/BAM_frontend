@@ -1,0 +1,45 @@
+export const categoryLabels = {
+  racket: 'Vợt',
+  shoes: 'Giày',
+  shirt: 'Áo',
+  shorts: 'Quần',
+  shuttlecock: 'Cầu lông',
+  bag: 'Túi đựng',
+  grip: 'Grip',
+  string: 'Dây',
+}
+
+export const levelLabels = {
+  beginner: 'Mới bắt đầu',
+  intermediate: 'Trung cấp',
+  advanced: 'Nâng cao',
+  pro: 'Chuyên nghiệp',
+}
+
+export const levelColors = {
+  beginner: '#64748b',
+  intermediate: '#3b82f6',
+  advanced: '#84cc16',
+  pro: '#facc15',
+}
+
+export const catIcons = {
+  racket: '🏸',
+  shoes: '👟',
+  shirt: '👕',
+  shorts: '🩳',
+  shuttlecock: '○',
+  bag: '🎒',
+  grip: '○',
+  string: '⊙',
+}
+
+export function formatCurrency(amount) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+}
+
+export function productImageUrl(image) {
+  if (!image) return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=300&fit=crop'
+  if (image.startsWith('http')) return image
+  return `https://images.unsplash.com/${image}?w=400&h=300&fit=crop`
+}
