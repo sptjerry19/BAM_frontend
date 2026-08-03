@@ -6,7 +6,11 @@ import CourtsManager from './CourtsManager.vue'
 import ProductsManager from './ProductsManager.vue'
 import MembersManager from './MembersManager.vue'
 
-const emit = defineEmits(['switch-portal'])
+const emit = defineEmits(['logout'])
+
+defineProps({
+  authUser: { type: Object, default: null },
+})
 
 const page = ref('dashboard')
 const menuOpen = ref(false)
@@ -123,10 +127,10 @@ onUnmounted(() => {
           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl btn-ghost text-sm"
           :whileHover="{ scale: 1.02 }"
           :whileTap="{ scale: 0.97 }"
-          @click="emit('switch-portal')"
+          @click="emit('logout')"
         >
-          <span style="font-size: 16px">⇄</span>
-          <span>Chuyển sang User</span>
+          <span style="font-size: 16px">⎋</span>
+          <span>Đăng xuất</span>
         </motion.button>
       </div>
     </motion.aside>
@@ -198,10 +202,10 @@ onUnmounted(() => {
           <button
             type="button"
             class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl btn-ghost text-sm"
-            @click="emit('switch-portal'); menuOpen = false"
+            @click="emit('logout'); menuOpen = false"
           >
-            <span>⇄</span>
-            <span>Chuyển sang User</span>
+            <span>⎋</span>
+            <span>Đăng xuất</span>
           </button>
         </div>
       </motion.aside>
@@ -233,10 +237,10 @@ onUnmounted(() => {
         <button
           type="button"
           class="w-11 h-11 rounded-xl btn-ghost flex items-center justify-center text-base"
-          title="Chuyển User"
-          @click="emit('switch-portal')"
+          title="Đăng xuất"
+          @click="emit('logout')"
         >
-          ⇄
+          ⎋
         </button>
       </header>
 

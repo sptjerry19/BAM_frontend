@@ -81,7 +81,7 @@ function formatJoinDate(d) {
           <motion.img
             :src="user.avatar"
             :alt="user.name"
-            class="w-20 h-20 rounded-2xl object-cover"
+            class="w-20 h-20 rounded-2xl object-cover z-10"
             :style="{ border: `3px solid ${levelColors[user.level]}40` }"
             :while-hover="{ scale: 1.05 }"
           />

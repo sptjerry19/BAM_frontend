@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, provide, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { getMember } from '../../api'
+import { getMember, attachMemberEquipment, detachMemberEquipment } from '../../api'
 import { levelColors } from '../../utils/labels'
 import MapView from './MapView.vue'
 import ProfileView from './ProfileView.vue'
@@ -10,32 +10,39 @@ import ShopView from './ShopView.vue'
 import CartView from './CartView.vue'
 import FavoritesView from './FavoritesView.vue'
 import BookingModal from './BookingModal.vue'
+import ProductDetailModal from './ProductDetailModal.vue'
 
-const emit = defineEmits(['switch-portal'])
+const props = defineProps({
+  authUser: { type: Object, default: null },
+})
+
+const emit = defineEmits(['logout'])
 
 const page = ref('map')
 const user = ref(null)
 const cart = ref([])
 const favorites = ref(['p1', 'p3'])
 const bookingCourt = ref(null)
+const productDetail = ref(null)
 const menuOpen = ref(false)
 const isMobile = ref(false)
 
 const navItems = [
   { id: 'map', label: 'Bản đồ sân', short: 'Bản đồ', icon: '◎', color: '#6366f1' },
-  { id: 'profile', label: 'Hồ sơ', short: 'Hồ sơ', icon: '◉', color: '#84cc16' },
-  { id: 'equipment', label: 'Trang bị', short: 'Trang bị', icon: '⊞', color: '#f59e0b' },
   { id: 'shop', label: 'Cửa hàng', short: 'Shop', icon: '◈', color: '#ec4899' },
   { id: 'cart', label: 'Giỏ hàng', short: 'Giỏ', icon: '⬡', color: '#06b6d4' },
+  { id: 'profile', label: 'Hồ sơ', short: 'Hồ sơ', icon: '◉', color: '#84cc16' },
+  { id: 'equipment', label: 'Trang bị', short: 'Trang bị', icon: '⊞', color: '#f59e0b' },
   { id: 'favorites', label: 'Yêu thích', short: 'Thích', icon: '♡', color: '#ef4444' },
 ]
 
-const bottomNavIds = ['map', 'shop', 'cart', 'profile', 'more']
-const morePages = ['equipment', 'favorites']
+const bottomNavIds = ['map', 'shop', 'cart', 'profile', 'equipment', 'favorites']
 
 const cartCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0))
 const currentNav = computed(() => navItems.find((i) => i.id === page.value) || navItems[0])
-const moreActive = computed(() => morePages.includes(page.value))
+const productDetailIsFav = computed(() =>
+  productDetail.value ? favorites.value.includes(productDetail.value.id) : false,
+)
 
 function addToCart(productId) {
   const existing = cart.value.find((i) => i.productId === productId)
@@ -58,6 +65,29 @@ function removeFavorite(id) {
   if (idx >= 0) favorites.value.splice(idx, 1)
 }
 
+async function addToEquipment(productId) {
+  if (!user.value?.id || !productId) return
+  const equipment = user.value.equipment || []
+  if (equipment.includes(productId)) return
+  try {
+    const updated = await attachMemberEquipment(user.value.id, productId)
+    user.value = updated?.equipment ? updated : { ...user.value, equipment: [...equipment, productId] }
+  } catch {
+    user.value = { ...user.value, equipment: [...equipment, productId] }
+  }
+}
+
+async function removeFromEquipment(productId) {
+  if (!user.value?.id || !productId) return
+  const equipment = (user.value.equipment || []).filter((id) => id !== productId)
+  try {
+    const updated = await detachMemberEquipment(user.value.id, productId)
+    user.value = updated?.equipment !== undefined ? updated : { ...user.value, equipment }
+  } catch {
+    user.value = { ...user.value, equipment }
+  }
+}
+
 provide('user', user)
 provide('cart', cart)
 provide('addToCart', addToCart)
@@ -65,6 +95,30 @@ provide('setCart', setCart)
 provide('favorites', favorites)
 provide('toggleFavorite', toggleFavorite)
 provide('removeFavorite', removeFavorite)
+provide('addToEquipment', addToEquipment)
+provide('removeFromEquipment', removeFromEquipment)
+provide('openProductDetail', (p) => { productDetail.value = p })
+provide('goToShop', () => { page.value = 'shop' })
+
+function openProductDetail(p) {
+  productDetail.value = p
+}
+
+function closeProductDetail() {
+  productDetail.value = null
+}
+
+function onProductAddToCart() {
+  if (productDetail.value) addToCart(productDetail.value.id)
+}
+
+function onProductToggleFav() {
+  if (productDetail.value) toggleFavorite(productDetail.value.id)
+}
+
+async function onProductAddToEquipment(productId) {
+  await addToEquipment(productId)
+}
 
 function checkMobile() {
   isMobile.value = window.matchMedia('(max-width: 767px)').matches
@@ -77,10 +131,6 @@ function selectPage(id) {
 }
 
 function onBottomNav(id) {
-  if (id === 'more') {
-    menuOpen.value = true
-    return
-  }
   selectPage(id)
 }
 
@@ -105,7 +155,32 @@ watch(menuOpen, (open) => {
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  user.value = await getMember('m1')
+  const memberId = props.authUser?.member_id || props.authUser?.member?.id
+  if (memberId) {
+    try {
+      user.value = await getMember(memberId)
+      return
+    } catch {
+      /* fallback below */
+    }
+  }
+  if (props.authUser?.member) {
+    user.value = props.authUser.member
+  } else if (props.authUser) {
+    user.value = {
+      id: props.authUser.member_id || `u_${props.authUser.id}`,
+      name: props.authUser.name,
+      email: props.authUser.email,
+      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(props.authUser.email || props.authUser.name)}`,
+      level: 'beginner',
+      points: 0,
+      matches: 0,
+      wins: 0,
+      total_cost: 0,
+      equipment: [],
+      status: 'active',
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -193,9 +268,9 @@ onUnmounted(() => {
           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl btn-ghost text-sm"
           :whileHover="{ scale: 1.02 }"
           :whileTap="{ scale: 0.97 }"
-          @click="emit('switch-portal')"
+          @click="emit('logout')"
         >
-          <span style="font-size: 16px">⇄</span> Chuyển sang Admin
+          <span style="font-size: 16px">⎋</span> Đăng xuất
         </motion.button>
       </div>
     </motion.aside>
@@ -273,10 +348,10 @@ onUnmounted(() => {
           <button
             type="button"
             class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl btn-ghost text-sm"
-            @click="emit('switch-portal'); menuOpen = false"
+            @click="emit('logout'); menuOpen = false"
           >
-            <span>⇄</span>
-            <span>Chuyển sang Admin</span>
+            <span>⎋</span>
+            <span>Đăng xuất</span>
           </button>
         </div>
       </motion.aside>
@@ -337,59 +412,67 @@ onUnmounted(() => {
           >
             <MapView v-if="page === 'map'" @book="onBook" />
             <ProfileView v-else-if="page === 'profile'" />
-            <EquipmentView v-else-if="page === 'equipment'" />
-            <ShopView v-else-if="page === 'shop'" />
+            <EquipmentView v-else-if="page === 'equipment'" @go-shop="selectPage('shop')" />
+            <ShopView v-else-if="page === 'shop'" @product-detail="openProductDetail" />
             <CartView v-else-if="page === 'cart'" />
-            <FavoritesView v-else-if="page === 'favorites'" />
+            <FavoritesView v-else-if="page === 'favorites'" @product-detail="openProductDetail" />
           </motion.div>
         </AnimatePresence>
       </main>
 
-      <!-- Mobile bottom nav -->
+      <!-- Mobile bottom nav — 6 items, scrollable -->
       <nav
-        class="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-5 gap-0.5 px-2 pt-2"
-        style="background: rgba(7,11,20,0.94); border-top: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(16px); padding-bottom: max(8px, env(safe-area-inset-bottom))"
+        class="md:hidden fixed bottom-0 inset-x-0 z-30 bottom-nav-blur pb-safe"
       >
-        <button
-          v-for="id in bottomNavIds"
-          :key="id"
-          type="button"
-          class="relative flex flex-col items-center justify-center gap-1 py-2 rounded-xl min-h-[56px] transition-colors"
-          :style="{
-            color:
-              id === 'more'
-                ? moreActive || menuOpen
-                  ? '#f0f4ff'
-                  : '#64748b'
-                : page === id
-                  ? navItems.find((n) => n.id === id)?.color
-                  : '#64748b',
-            background:
-              id !== 'more' && page === id
-                ? `${navItems.find((n) => n.id === id)?.color}14`
-                : 'transparent',
-          }"
-          @click="onBottomNav(id)"
-        >
-          <span class="text-lg leading-none">
-            {{ id === 'more' ? '☰' : navItems.find((n) => n.id === id)?.icon }}
-          </span>
-          <span class="text-[10px] font-semibold leading-none">
-            {{ id === 'more' ? 'Menu' : navItems.find((n) => n.id === id)?.short }}
-          </span>
-          <span
-            v-if="id === 'cart' && cartCount > 0"
-            class="absolute top-1.5 right-[18%] min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-            style="background: #06b6d4; color: #0a1200"
+        <div class="flex overflow-x-auto no-scrollbar px-1 pt-2">
+          <button
+            v-for="id in bottomNavIds"
+            :key="id"
+            type="button"
+            class="relative flex flex-col items-center justify-center gap-1 py-2 rounded-xl min-h-[56px] min-w-[64px] flex-1 transition-colors shrink-0"
+            :style="{
+              color: page === id ? navItems.find((n) => n.id === id)?.color : '#64748b',
+              background:
+                page === id ? `${navItems.find((n) => n.id === id)?.color}14` : 'transparent',
+            }"
+            @click="onBottomNav(id)"
           >
-            {{ cartCount }}
-          </span>
-        </button>
+            <span class="text-lg leading-none">
+              {{ navItems.find((n) => n.id === id)?.icon }}
+            </span>
+            <span class="text-[10px] font-semibold leading-none">
+              {{ navItems.find((n) => n.id === id)?.short }}
+            </span>
+            <span
+              v-if="id === 'cart' && cartCount > 0"
+              class="absolute top-1.5 right-[18%] min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+              style="background: #06b6d4; color: #0a1200"
+            >
+              {{ cartCount }}
+            </span>
+            <span
+              v-if="id === 'favorites' && favorites.length > 0"
+              class="absolute top-1.5 right-[18%] min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+              style="background: #ef4444; color: #fff"
+            >
+              {{ favorites.length }}
+            </span>
+          </button>
+        </div>
       </nav>
     </div>
 
     <AnimatePresence>
       <BookingModal v-if="bookingCourt" :court="bookingCourt" @close="closeBooking" />
+      <ProductDetailModal
+        v-if="productDetail"
+        :product="productDetail"
+        :is-fav="productDetailIsFav"
+        @close="closeProductDetail"
+        @add-to-cart="onProductAddToCart"
+        @toggle-fav="onProductToggleFav"
+        @add-to-equipment="onProductAddToEquipment"
+      />
     </AnimatePresence>
   </div>
 </template>

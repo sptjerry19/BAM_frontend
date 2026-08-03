@@ -9,6 +9,9 @@ const cart = inject('cart')
 const favorites = inject('favorites')
 const addToCartFn = inject('addToCart')
 const toggleFavorite = inject('toggleFavorite')
+const openProductDetail = inject('openProductDetail', null)
+
+const emit = defineEmits(['product-detail'])
 
 const products = ref([])
 const filter = ref('all')
@@ -77,6 +80,11 @@ function cartBtnLabel(p, justAdded, inCartItem) {
   if (inCartItem) return `Giỏ hàng (${inCartItem.qty})`
   return 'Thêm vào giỏ'
 }
+
+function onProductClick(p) {
+  if (openProductDetail) openProductDetail(p)
+  else emit('product-detail', p)
+}
 </script>
 
 <template>
@@ -92,13 +100,13 @@ function cartBtnLabel(p, justAdded, inCartItem) {
       :animate="{ opacity: 1 }"
       :transition="{ delay: 0.1 }"
     >
-      <div class="relative">
+      <div class="relative w-full">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: #475569">🔍</span>
         <input
           v-model="search"
           type="text"
           placeholder="Tìm sản phẩm..."
-          class="input-field rounded-xl pl-9 pr-4 py-2.5 text-sm w-52"
+          class="input-field rounded-xl pl-9 pr-4 py-2.5 text-sm w-52 w-full"
         />
       </div>
       <motion.button
@@ -129,8 +137,8 @@ function cartBtnLabel(p, justAdded, inCartItem) {
           :while-hover="{ y: -4, borderColor: 'rgba(255,255,255,0.14)' }"
         >
           <div
-            class="relative h-36 flex items-center justify-center overflow-hidden"
-            style="background: rgba(255,255,255,0.02)"
+            class="relative h-36 flex items-center justify-center overflow-hidden cursor-pointer product-img-bg"
+            @click="onProductClick(p)"
           >
             <motion.div
               style="font-size: 56px; opacity: 0.35"
@@ -160,7 +168,7 @@ function cartBtnLabel(p, justAdded, inCartItem) {
               </span>
             </div>
             <motion.button
-              class="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+              class="absolute top-2 right-2 w-10 h-10 sm:w-7 sm:h-7 rounded-full flex items-center justify-center"
               :style="{
                 background: isFavorite(p.id) ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)',
                 color: isFavorite(p.id) ? '#ef4444' : '#64748b',
@@ -180,7 +188,7 @@ function cartBtnLabel(p, justAdded, inCartItem) {
             </motion.button>
           </div>
 
-          <div class="p-4">
+          <div class="p-4 cursor-pointer" @click="onProductClick(p)">
             <div style="color: #475569; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px">
               {{ p.brand }} · {{ categoryLabels[p.category] }}
             </div>
@@ -197,12 +205,12 @@ function cartBtnLabel(p, justAdded, inCartItem) {
               </span>
             </div>
             <motion.button
-              class="w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed relative overflow-hidden"
+              class="w-full py-3 sm:py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed relative overflow-hidden min-h-[44px]"
               :style="cartBtnStyle(p, addedId === p.id, inCart(p.id))"
               :disabled="p.stock === 0"
               :while-hover="p.stock > 0 ? { scale: 1.02 } : {}"
               :while-tap="p.stock > 0 ? { scale: 0.97 } : {}"
-              @click="addToCart(p.id)"
+              @click.stop="addToCart(p.id)"
             >
               <AnimatePresence mode="wait">
                 <motion.span

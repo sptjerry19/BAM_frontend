@@ -108,7 +108,7 @@ function statusBarColor(status) {
             <div class="relative shrink-0">
               <img :src="member.avatar" :alt="member.name" class="w-10 h-10 rounded-full object-cover" />
               <span
-                class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
+                class="absolute bottom-0 w-2.5 h-2.5 rounded-full border-2"
                 style="background: #84cc16; border-color: #070b14"
               />
             </div>
@@ -127,7 +127,7 @@ function statusBarColor(status) {
       </motion.div>
 
       <motion.div
-        class="glass rounded-2xl p-6"
+        class="glass rounded-2xl p-6 grid grid-cols-2 lg:grid-cols-4"
         :initial="{ opacity: 0, y: 16 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: 0.42, duration: 0.4 }"

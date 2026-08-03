@@ -7,6 +7,7 @@ export const categoryLabels = {
   bag: 'Túi đựng',
   grip: 'Grip',
   string: 'Dây',
+  other: 'Khác',
 }
 
 export const levelLabels = {
@@ -32,6 +33,7 @@ export const catIcons = {
   bag: '🎒',
   grip: '○',
   string: '⊙',
+  other: '◈',
 }
 
 export function formatCurrency(amount) {

@@ -8,6 +8,9 @@ import { formatCurrency, catIcons } from '../../utils/labels'
 const favorites = inject('favorites')
 const removeFavorite = inject('removeFavorite')
 const addToCartFn = inject('addToCart')
+const openProductDetail = inject('openProductDetail', null)
+
+const emit = defineEmits(['product-detail'])
 
 const products = ref([])
 const courts = ref([])
@@ -29,6 +32,11 @@ function addToCart(productId) {
   addToCartFn(productId)
   addedId.value = productId
   setTimeout(() => { addedId.value = null }, 1200)
+}
+
+function onProductClick(p) {
+  if (openProductDetail) openProductDetail(p)
+  else emit('product-detail', p)
 }
 </script>
 
@@ -57,12 +65,13 @@ function addToCart(productId) {
         <motion.div
           v-for="(p, i) in favProducts"
           :key="p.id"
-          class="rounded-2xl p-5 group"
+          class="rounded-2xl p-5 group cursor-pointer"
           style="background: rgba(255,255,255,0.04); border: 1px solid rgba(239,68,68,0.12)"
           :initial="{ opacity: 0, scale: 0.9 }"
           :animate="{ opacity: 1, scale: 1 }"
           :transition="{ delay: i * 0.07 }"
           :while-hover="{ y: -3, borderColor: 'rgba(239,68,68,0.25)' }"
+          @click="onProductClick(p)"
         >
           <div class="flex items-start gap-3 mb-4">
             <div
@@ -80,7 +89,7 @@ function addToCart(productId) {
               style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25)"
               :while-hover="{ scale: 1.15, background: 'rgba(239,68,68,0.25)' }"
               :while-tap="{ scale: 0.85 }"
-              @click="removeFavorite(p.id)"
+              @click.stop="removeFavorite(p.id)"
             >
               ♥
             </motion.button>
@@ -91,7 +100,7 @@ function addToCart(productId) {
               class="btn-primary text-xs px-3 py-1.5 rounded-xl"
               :while-hover="{ scale: 1.04 }"
               :while-tap="{ scale: 0.96 }"
-              @click="addToCart(p.id)"
+              @click.stop="addToCart(p.id)"
             >
               {{ addedId === p.id ? '✓ Đã thêm' : 'Thêm giỏ' }}
             </motion.button>
