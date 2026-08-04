@@ -3,7 +3,7 @@ import { ref, inject, computed, onMounted } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
 import { getProductReviews, createProductReview } from '../../api'
 import Stars from '../common/Stars.vue'
-import { categoryLabels, catIcons, formatCurrency, productImageUrl } from '../../utils/labels'
+import { categoryLabels, catIcons, formatCurrency, productGallery } from '../../utils/labels'
 
 const props = defineProps({
   product: { type: Object, required: true },
@@ -25,6 +25,9 @@ const submittingReview = ref(false)
 const reviewError = ref('')
 const addingEquip = ref(false)
 const equipAdded = ref(false)
+const activeImage = ref(0)
+
+const gallery = computed(() => productGallery(props.product))
 
 const avgRating = computed(() => {
   if (reviewSummary.value?.avg_rating != null) return Number(reviewSummary.value.avg_rating)
@@ -185,17 +188,33 @@ onMounted(loadReviews)
         </div>
       </div>
 
-      <div
-        class="mx-5 h-40 sm:h-72 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 product-img-bg"
-        style="border: 1px solid rgba(255,255,255,0.06)"
-      >
-        <img
-          v-if="product.image"
-          :src="productImageUrl(product.image)"
-          :alt="product.name"
-          class="w-full h-full object-cover"
-        />
-        <span v-else class="text-6xl opacity-35">{{ catIcons[product.category] || '◈' }}</span>
+      <div class="mx-5 shrink-0">
+        <div
+          class="h-40 sm:h-52 rounded-2xl flex items-center justify-center overflow-hidden product-img-bg"
+          style="border: 1px solid rgba(255,255,255,0.06)"
+        >
+          <img
+            v-if="gallery.length"
+            :src="gallery[Math.min(activeImage, gallery.length - 1)]"
+            :alt="product.name"
+            class="w-full h-full object-cover"
+          />
+          <span v-else class="text-6xl opacity-35">{{ catIcons[product.category] || '◈' }}</span>
+        </div>
+        <div v-if="gallery.length > 1" class="flex gap-2 mt-2 overflow-x-auto no-scrollbar pb-1">
+          <button
+            v-for="(src, i) in gallery"
+            :key="src + i"
+            type="button"
+            class="w-14 h-14 rounded-xl overflow-hidden shrink-0"
+            :style="{
+              border: `2px solid ${activeImage === i ? '#84cc16' : 'rgba(255,255,255,0.1)'}`,
+            }"
+            @click="activeImage = i"
+          >
+            <img :src="src" alt="" class="w-full h-full object-cover" />
+          </button>
+        </div>
       </div>
 
       <div class="flex gap-1 mx-5 mt-4 p-1 rounded-xl shrink-0" style="background: rgba(255,255,255,0.04)">

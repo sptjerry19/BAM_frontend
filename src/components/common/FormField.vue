@@ -5,6 +5,9 @@ defineProps({
   type: { type: String, default: 'text' },
   placeholder: { type: String, default: '' },
   options: { type: Array, default: () => [] },
+  min: { type: [Number, String], default: undefined },
+  max: { type: [Number, String], default: undefined },
+  step: { type: [Number, String], default: undefined },
 })
 
 defineEmits(['update:modelValue'])
@@ -39,6 +42,9 @@ defineEmits(['update:modelValue'])
       class="input-field w-full rounded-xl px-4 py-2.5 text-sm"
       :type="type"
       :placeholder="placeholder"
+      :min="min"
+      :max="max"
+      :step="step"
       :value="modelValue"
       @input="$emit('update:modelValue', type === 'number' ? Number($event.target.value) : $event.target.value)"
     />

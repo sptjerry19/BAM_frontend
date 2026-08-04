@@ -287,6 +287,24 @@ button, a, .pill {
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+select.input-field {
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark;
+  background-color: #0d1424;
+  background-image: url("data:image/svg+xml,...chevron..."); /* mũi tên custom */
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 2.5rem;
+  color: #f0f4ff;
+}
+
+select.input-field option {
+  background-color: #0d1424;
+  color: #f0f4ff;
+}
+
 @media (max-width: 767px) {
   .page-title { font-size: 26px !important; }
   .input-field, input.input-field, textarea.input-field, select.input-field {

@@ -5,7 +5,7 @@ import { getStats } from '../../api'
 import AnimatedNumber from '../common/AnimatedNumber.vue'
 import StatusPill from '../common/StatusPill.vue'
 import Stars from '../common/Stars.vue'
-import { formatCurrency, productImageUrl, levelColors } from '../../utils/labels'
+import { formatCurrency, productCoverUrl, levelColors } from '../../utils/labels'
 
 const stats = ref(null)
 const loading = ref(true)
@@ -99,7 +99,7 @@ function statusBarColor(status) {
         <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: #f0f4ff; margin-bottom: 16px">
           Thành viên hoạt động
         </h2>
-        <div class="space-y-2">
+        <div class="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div
             v-for="member in stats.activeMembersList"
             :key="member.id"
@@ -174,7 +174,7 @@ function statusBarColor(status) {
             :whileHover="{ y: -3 }"
           >
             <img
-              :src="productImageUrl(product.image)"
+              :src="productCoverUrl(product)"
               :alt="product.name"
               class="w-full h-32 object-cover"
             />

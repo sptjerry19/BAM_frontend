@@ -5,13 +5,15 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '../../
 import Modal from '../common/Modal.vue'
 import FormField from '../common/FormField.vue'
 import Stars from '../common/Stars.vue'
-import { categoryLabels, catIcons, formatCurrency, productImageUrl } from '../../utils/labels'
+import { categoryLabels, catIcons, formatCurrency, productCoverUrl, productImageUrl } from '../../utils/labels'
 
 const products = ref([])
 const loading = ref(true)
+const saving = ref(false)
 const showModal = ref(false)
 const editing = ref(null)
 const filterCategory = ref('')
+const formError = ref('')
 
 const emptyForm = () => ({
   id: '',
@@ -25,12 +27,19 @@ const emptyForm = () => ({
   reviews: 0,
   description: '',
   featured: false,
-  image: 'photo-1626224583764-f87db24ac4ea',
 })
 
 const form = ref(emptyForm())
+/** Existing remote URLs kept when editing */
+const existingImages = ref([])
+/** Local File objects pending upload */
+const pendingFiles = ref([])
+/** Object URLs for pending file previews */
+const pendingPreviews = ref([])
 
-const categories = Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))
+const categories = Object.entries(categoryLabels)
+  .filter(([value]) => value !== 'other')
+  .map(([value, label]) => ({ value, label }))
 const categoryOptions = [{ value: '', label: 'Tất cả' }, ...categories]
 const categoryFormOptions = categories
 
@@ -39,6 +48,11 @@ const filtered = computed(() =>
     ? products.value.filter((p) => p.category === filterCategory.value)
     : products.value,
 )
+
+const previewItems = computed(() => [
+  ...existingImages.value.map((url) => ({ type: 'remote', url: productImageUrl(url), key: url })),
+  ...pendingPreviews.value.map((url, i) => ({ type: 'local', url, key: `local-${i}` })),
+])
 
 function discountPct(product) {
   if (!product.original_price || product.original_price <= product.price) return 0
@@ -56,29 +70,113 @@ async function load() {
 
 onMounted(load)
 
+function revokePreviews() {
+  pendingPreviews.value.forEach((url) => URL.revokeObjectURL(url))
+  pendingPreviews.value = []
+}
+
 function openAdd() {
   editing.value = null
   form.value = emptyForm()
   form.value.id = `p${Date.now()}`
+  existingImages.value = []
+  pendingFiles.value = []
+  revokePreviews()
+  formError.value = ''
   showModal.value = true
 }
 
 function openEdit(product) {
   editing.value = product
-  form.value = { ...product }
+  form.value = {
+    id: product.id,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    price: product.price,
+    original_price: product.original_price,
+    stock: product.stock,
+    rating: product.rating,
+    reviews: product.reviews,
+    description: product.description || '',
+    featured: !!product.featured,
+  }
+  const imgs = Array.isArray(product.images) ? [...product.images] : []
+  existingImages.value = imgs.length ? imgs : (product.image ? [product.image] : [])
+  pendingFiles.value = []
+  revokePreviews()
+  formError.value = ''
   showModal.value = true
 }
 
-async function save() {
-  const data = { ...form.value }
-  if (!data.original_price) data.original_price = null
-  if (editing.value) {
-    await updateProduct(editing.value.id, data)
-  } else {
-    await createProduct(data)
+function onPickImages(e) {
+  const files = [...(e.target.files || [])]
+  e.target.value = ''
+  if (!files.length) return
+
+  const room = 12 - (existingImages.value.length + pendingFiles.value.length)
+  const accepted = files.slice(0, Math.max(0, room))
+  pendingFiles.value.push(...accepted)
+  pendingPreviews.value.push(...accepted.map((f) => URL.createObjectURL(f)))
+}
+
+function removePreview(item, index) {
+  if (item.type === 'remote') {
+    existingImages.value = existingImages.value.filter((u) => u !== item.key)
+    return
   }
-  showModal.value = false
-  await load()
+  const localIndex = index - existingImages.value.length
+  if (localIndex < 0) return
+  URL.revokeObjectURL(pendingPreviews.value[localIndex])
+  pendingFiles.value.splice(localIndex, 1)
+  pendingPreviews.value.splice(localIndex, 1)
+}
+
+function buildFormData() {
+  const fd = new FormData()
+  const data = form.value
+  if (!editing.value) fd.append('id', data.id)
+  fd.append('name', data.name)
+  fd.append('brand', data.brand)
+  fd.append('category', data.category)
+  fd.append('price', String(Number(data.price) || 0))
+  if (data.original_price) fd.append('original_price', String(Number(data.original_price)))
+  fd.append('stock', String(Number(data.stock) || 0))
+  fd.append('rating', String(Number(data.rating) || 0))
+  fd.append('reviews', String(Number(data.reviews) || 0))
+  if (data.description) fd.append('description', data.description)
+  fd.append('featured', data.featured ? '1' : '0')
+
+  existingImages.value.forEach((url) => fd.append('keep_images[]', url))
+  pendingFiles.value.forEach((file) => fd.append('image_files[]', file))
+
+  return fd
+}
+
+async function save() {
+  formError.value = ''
+  if (!form.value.name?.trim() || !form.value.brand?.trim()) {
+    formError.value = 'Vui lòng nhập tên và thương hiệu'
+    return
+  }
+  if (!existingImages.value.length && !pendingFiles.value.length) {
+    formError.value = 'Vui lòng thêm ít nhất 1 hình ảnh'
+    return
+  }
+
+  saving.value = true
+  try {
+    const fd = buildFormData()
+    if (editing.value) await updateProduct(editing.value.id, fd)
+    else await createProduct(fd)
+    showModal.value = false
+    revokePreviews()
+    await load()
+  } catch (err) {
+    formError.value = err?.api?.message || err?.response?.data?.message || 'Không thể lưu sản phẩm'
+  } finally {
+    saving.value = false
+  }
 }
 
 async function remove(id) {
@@ -142,10 +240,17 @@ async function remove(id) {
       >
         <div class="relative">
           <img
-            :src="productImageUrl(product.image)"
+            :src="productCoverUrl(product)"
             :alt="product.name"
             class="w-full h-44 object-cover"
           />
+          <span
+            v-if="(product.images || []).length > 1"
+            class="absolute bottom-3 right-3 pill mono text-[10px]"
+            style="background: rgba(0,0,0,0.55); color: #f0f4ff"
+          >
+            {{ product.images.length }} ảnh
+          </span>
           <span
             v-if="discountPct(product) > 0"
             class="absolute top-3 left-3 pill mono"
@@ -220,6 +325,40 @@ async function remove(id) {
     <AnimatePresence>
       <Modal v-if="showModal" :title="editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'" @close="showModal = false">
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          <div>
+            <div class="uppercase tracking-wider font-semibold text-[11px] mb-1.5" style="color: #64748b">
+              Hình ảnh * (tối đa 12)
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
+              <div
+                v-for="(item, idx) in previewItems"
+                :key="item.key"
+                class="relative aspect-square rounded-xl overflow-hidden"
+                style="border: 1px solid rgba(255,255,255,0.08)"
+              >
+                <img :src="item.url" alt="" class="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  class="absolute top-1 right-1 w-6 h-6 rounded-full text-xs"
+                  style="background: rgba(239,68,68,0.85); color: #fff"
+                  @click="removePreview(item, idx)"
+                >
+                  ✕
+                </button>
+              </div>
+              <label
+                v-if="previewItems.length < 12"
+                class="aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer"
+                style="border: 1px dashed rgba(255,255,255,0.15); background: rgba(255,255,255,0.03)"
+              >
+                <span class="text-lg" style="color: #84cc16">+</span>
+                <span class="text-[10px] mt-1" style="color: #64748b">Thêm ảnh</span>
+                <input type="file" accept="image/*" multiple class="hidden" @change="onPickImages" />
+              </label>
+            </div>
+            <p class="text-[11px]" style="color: #475569">Ảnh được upload lên S3. Ảnh đầu tiên là ảnh bìa.</p>
+          </div>
+
           <FormField v-model="form.name" label="Tên sản phẩm" />
           <FormField v-model="form.brand" label="Thương hiệu" />
           <FormField v-model="form.category" label="Danh mục" type="select" :options="categoryFormOptions" />
@@ -229,17 +368,26 @@ async function remove(id) {
           </div>
           <div class="grid grid-cols-2 gap-4">
             <FormField v-model="form.stock" label="Tồn kho" type="number" />
-            <FormField v-model="form.rating" label="Đánh giá" type="number" />
+            <FormField v-model="form.rating" label="Đánh giá" type="number" :min="0" :max="5" :step="0.1" />
           </div>
           <FormField v-model="form.description" label="Mô tả" type="textarea" />
+
+          <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: #94a3b8">
+            <input v-model="form.featured" type="checkbox" class="rounded" />
+            Sản phẩm nổi bật
+          </label>
+
+          <p v-if="formError" class="text-sm text-red-400">{{ formError }}</p>
+
           <div class="flex gap-3 pt-2">
             <motion.button
               type="button"
-              class="btn-primary flex-1 rounded-xl py-2.5 text-sm"
+              class="btn-primary flex-1 rounded-xl py-2.5 text-sm disabled:opacity-50"
+              :disabled="saving"
               :whileTap="{ scale: 0.97 }"
               @click="save"
             >
-              Lưu
+              {{ saving ? 'Đang lưu...' : 'Lưu' }}
             </motion.button>
             <motion.button
               type="button"
