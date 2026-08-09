@@ -1,9 +1,10 @@
 <script setup>
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, computed, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
 import { getProducts } from '../../api'
 import Stars from '../common/Stars.vue'
-import { categoryLabels, catIcons, formatCurrency } from '../../utils/labels'
+import Icon from '../common/Icon.vue'
+import { categoryLabels, formatCurrency, productCoverUrl } from '../../utils/labels'
 
 const cart = inject('cart')
 const favorites = inject('favorites')
@@ -16,32 +17,106 @@ const emit = defineEmits(['product-detail'])
 const products = ref([])
 const filter = ref('all')
 const search = ref('')
+const searchQuery = ref('')
+const page = ref(1)
+const perPage = ref(12)
+const loading = ref(true)
 const addedId = ref(null)
+const pagination = ref({
+  current_page: 1,
+  per_page: 12,
+  total: 0,
+  last_page: 1,
+  from: 0,
+  to: 0,
+  has_more_pages: false,
+})
 
 const cats = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'racket', label: '🏸 Vợt' },
-  { id: 'shoes', label: '👟 Giày' },
-  { id: 'shirt', label: '👕 Áo' },
-  { id: 'shorts', label: '🩳 Quần' },
+  { id: 'racket', label: 'Vợt' },
+  { id: 'shoes', label: 'Giày' },
+  { id: 'shirt', label: 'Áo' },
+  { id: 'shorts', label: 'Quần' },
   { id: 'shuttlecock', label: 'Cầu' },
-  { id: 'bag', label: '🎒 Túi' },
+  { id: 'bag', label: 'Túi' },
   { id: 'grip', label: 'Grip' },
 ]
 
-const filtered = computed(() =>
-  products.value
-    .filter((p) => filter.value === 'all' || p.category === filter.value)
-    .filter((p) => {
-      if (!search.value) return true
-      const q = search.value.toLowerCase()
-      return p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
-    }),
-)
+const pageNumbers = computed(() => {
+  const last = pagination.value.last_page || 1
+  const current = pagination.value.current_page || 1
+  const windowSize = 5
+  let start = Math.max(1, current - Math.floor(windowSize / 2))
+  const end = Math.min(last, start + windowSize - 1)
+  start = Math.max(1, end - windowSize + 1)
 
-onMounted(async () => {
-  products.value = await getProducts()
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
 })
+
+const rangeLabel = computed(() => {
+  const { from, to, total } = pagination.value
+  if (!total) return 'Chưa có sản phẩm nào'
+  return `${from}–${to} trong ${total.toLocaleString('vi-VN')} sản phẩm`
+})
+
+let searchTimer = null
+
+async function loadProducts() {
+  loading.value = true
+  try {
+    const category = filter.value === 'all' ? undefined : filter.value
+    const res = await getProducts(category, {
+      page: page.value,
+      per_page: perPage.value,
+      ...(searchQuery.value ? { search: searchQuery.value } : {}),
+    })
+    products.value = res.data
+    if (res.pagination) {
+      pagination.value = res.pagination
+      page.value = res.pagination.current_page
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+function goToPage(p) {
+  const last = pagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === page.value) return
+  page.value = next
+  loadProducts()
+  document.getElementById('shop-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function setFilter(id) {
+  if (filter.value === id) return
+  filter.value = id
+  page.value = 1
+  loadProducts()
+}
+
+function resetFilters() {
+  filter.value = 'all'
+  search.value = ''
+  searchQuery.value = ''
+  page.value = 1
+  loadProducts()
+}
+
+watch(search, (value) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    searchQuery.value = value.trim()
+    page.value = 1
+    loadProducts()
+  }, 350)
+})
+
+onMounted(loadProducts)
 
 function addToCart(productId) {
   addToCartFn(productId)
@@ -57,27 +132,19 @@ function inCart(id) {
   return cart.value.find((x) => x.productId === id)
 }
 
-function catFilterStyle(id) {
-  if (filter.value !== id) {
-    return { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }
-  }
-  return { background: '#84cc16', color: '#0a1200', border: '1px solid transparent', fontWeight: 700 }
+function discountPct(p) {
+  if (!p.original_price || p.original_price <= p.price) return 0
+  return Math.round((1 - p.price / p.original_price) * 100)
 }
 
-function cartBtnStyle(p, justAdded, inCartItem) {
-  if (justAdded) {
-    return { background: 'rgba(132,204,22,0.15)', color: '#84cc16', border: '1px solid rgba(132,204,22,0.3)' }
-  }
-  if (inCartItem) {
-    return { background: 'rgba(132,204,22,0.1)', color: '#84cc16', border: '1px solid rgba(132,204,22,0.25)' }
-  }
-  return { background: 'linear-gradient(135deg, #84cc16, #a3e635)', color: '#0a1200', border: 'none' }
+function isOwned(p) {
+  return addedId.value === p.id || Boolean(inCart(p.id))
 }
 
 function cartBtnLabel(p, justAdded, inCartItem) {
-  if (p.stock === 0) return 'Hết hàng'
-  if (justAdded) return '✓ Đã thêm!'
-  if (inCartItem) return `Giỏ hàng (${inCartItem.qty})`
+  if (p.stock === 0) return 'Tạm hết hàng'
+  if (justAdded) return 'Đã thêm'
+  if (inCartItem) return `Trong giỏ · ${inCartItem.qty}`
   return 'Thêm vào giỏ'
 }
 
@@ -88,145 +155,230 @@ function onProductClick(p) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <motion.div :initial="{ opacity: 0, y: -10 }" :animate="{ opacity: 1, y: 0 }">
-      <h1 class="font-heading" style="font-size: 30px; font-weight: 800; letter-spacing: -0.5px">Cửa hàng</h1>
-      <p style="color: #64748b; margin-top: 4px; font-size: 14px">Trang bị cầu lông chính hãng · Giao hàng miễn phí</p>
-    </motion.div>
+  <div>
+    <header class="flex flex-wrap items-end justify-between gap-6">
+      <div>
+        <span class="eyebrow">
+          <Icon name="spark" :size="14" />
+          Hàng chính hãng · bảo hành 12 tháng
+        </span>
+        <h1 class="page-title mt-4">Cửa hàng trang bị</h1>
+        <p class="lede mt-3">
+          Vợt, giày, cầu và phụ kiện được chọn theo lối chơi. Giao trong 48 giờ nội thành,
+          đổi trả 14 ngày nếu chưa dùng.
+        </p>
+      </div>
 
-    <motion.div
-      class="flex flex-wrap gap-2 items-center"
-      :initial="{ opacity: 0 }"
-      :animate="{ opacity: 1 }"
-      :transition="{ delay: 0.1 }"
-    >
-      <div class="relative w-full">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: #475569">🔍</span>
+      <div class="relative w-full sm:w-80">
+        <span class="absolute left-3.5 top-1/2 -translate-y-1/2" style="color: var(--text-3)">
+          <Icon name="search" :size="17" />
+        </span>
+        <label class="sr-only" for="shop-search">Tìm sản phẩm</label>
         <input
+          id="shop-search"
           v-model="search"
-          type="text"
-          placeholder="Tìm sản phẩm..."
-          class="input-field rounded-xl pl-9 pr-4 py-2.5 text-sm w-52 w-full"
+          type="search"
+          placeholder="Tìm vợt, giày, thương hiệu..."
+          class="input-field rounded-2xl w-full pl-11 pr-4 py-3 text-sm"
         />
       </div>
-      <motion.button
+    </header>
+
+    <div class="flex flex-wrap gap-2 mt-8" role="group" aria-label="Lọc theo danh mục">
+      <button
         v-for="c in cats"
         :key="c.id"
-        class="pill transition-all"
-        :style="catFilterStyle(c.id)"
-        :while-hover="{ scale: 1.04 }"
-        :while-tap="{ scale: 0.96 }"
-        @click="filter = c.id"
+        type="button"
+        class="chip"
+        :aria-pressed="filter === c.id"
+        @click="setFilter(c.id)"
       >
         {{ c.label }}
-      </motion.button>
-    </motion.div>
+      </button>
+    </div>
 
-    <motion.div layout class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <AnimatePresence>
-        <motion.div
-          v-for="(p, i) in filtered"
-          :key="p.id"
-          layout
-          class="rounded-2xl overflow-hidden group relative"
-          style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07)"
-          :initial="{ opacity: 0, scale: 0.9 }"
-          :animate="{ opacity: 1, scale: 1 }"
-          :exit="{ opacity: 0, scale: 0.85 }"
-          :transition="{ delay: i * 0.04 }"
-          :while-hover="{ y: -4, borderColor: 'rgba(255,255,255,0.14)' }"
+    <div class="flex items-center justify-between gap-3 mt-7 text-[13px]" style="color: var(--text-3)">
+      <span class="mono">{{ rangeLabel }}</span>
+      <span v-if="loading" style="color: var(--accent)">Đang tải</span>
+    </div>
+
+    <div id="shop-grid" class="scroll-mt-24 mt-4">
+      <div v-if="loading" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div v-for="n in 8" :key="n" class="skeleton h-[330px]" style="border-radius: var(--r-lg)" />
+      </div>
+
+      <div
+        v-else-if="products.length === 0"
+        class="surface-quiet px-6 py-20 text-center"
+      >
+        <span
+          class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center"
+          style="background: var(--accent-soft); color: var(--accent)"
         >
-          <div
-            class="relative h-36 flex items-center justify-center overflow-hidden cursor-pointer product-img-bg"
-            @click="onProductClick(p)"
-          >
-            <motion.div
-              style="font-size: 56px; opacity: 0.35"
-              :animate="{ y: [-3, 3, -3] }"
-              :transition="{ duration: 3 + i * 0.3, repeat: Infinity, ease: 'easeInOut' }"
-            >
-              {{ catIcons[p.category] || '◈' }}
-            </motion.div>
-            <div
-              class="absolute inset-x-0 bottom-0 h-12"
-              style="background: linear-gradient(to top, rgba(255,255,255,0.04), transparent)"
-            />
-            <div class="absolute top-2 left-2 flex gap-1.5">
-              <span
-                v-if="p.original_price && p.original_price > p.price"
-                class="pill"
-                style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-size: 10px"
-              >
-                -{{ Math.round((1 - p.price / p.original_price) * 100) }}%
-              </span>
-              <span
-                v-if="p.featured"
-                class="pill"
-                style="background: rgba(250,204,21,0.2); color: #facc15; border: 1px solid rgba(250,204,21,0.3); font-size: 10px"
-              >
-                🔥 Hot
-              </span>
-            </div>
-            <motion.button
-              class="absolute top-2 right-2 w-10 h-10 sm:w-7 sm:h-7 rounded-full flex items-center justify-center"
-              :style="{
-                background: isFavorite(p.id) ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)',
-                color: isFavorite(p.id) ? '#ef4444' : '#64748b',
-                border: `1px solid ${isFavorite(p.id) ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              }"
-              :while-hover="{ scale: 1.15 }"
-              :while-tap="{ scale: 0.85 }"
-              @click.stop="toggleFavorite(p.id)"
-            >
-              <motion.span
-                style="font-size: 13px"
-                :animate="isFavorite(p.id) ? { scale: [1, 1.4, 1] } : {}"
-                :transition="{ duration: 0.3 }"
-              >
-                {{ isFavorite(p.id) ? '♥' : '♡' }}
-              </motion.span>
-            </motion.button>
-          </div>
+          <Icon name="search" :size="23" />
+        </span>
+        <p class="font-heading font-bold text-[17px] mt-4">Không tìm thấy sản phẩm nào</p>
+        <p class="mt-1.5 text-[13.5px]" style="color: var(--text-3)">
+          Thử từ khóa khác, hoặc bỏ bộ lọc danh mục đang chọn.
+        </p>
+        <button type="button" class="btn-text mt-5 mx-auto" @click="resetFilters">
+          Xóa bộ lọc
+          <Icon name="arrowRight" :size="16" />
+        </button>
+      </div>
 
-          <div class="p-4 cursor-pointer" @click="onProductClick(p)">
-            <div style="color: #475569; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px">
-              {{ p.brand }} · {{ categoryLabels[p.category] }}
-            </div>
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px; line-height: 1.35">{{ p.name }}</div>
-            <Stars :rating="p.rating" />
-            <div class="flex items-baseline gap-2 mt-2 mb-3">
-              <span class="mono text-base" style="color: #84cc16; font-weight: 600">{{ formatCurrency(p.price) }}</span>
-              <span
-                v-if="p.original_price"
-                class="mono text-xs line-through"
-                style="color: #475569"
+      <div v-else class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <AnimatePresence>
+          <motion.article
+            v-for="(p, i) in products"
+            :key="p.id"
+            class="surface spotlight lift overflow-hidden flex flex-col"
+            :initial="{ opacity: 0, y: 18 }"
+            :animate="{ opacity: 1, y: 0 }"
+            :exit="{ opacity: 0, scale: 0.96 }"
+            :transition="{ delay: Math.min(i, 8) * 0.035, duration: 0.4, ease: [0.22, 1, 0.36, 1] }"
+          >
+            <div
+              class="relative h-44 overflow-hidden cursor-pointer product-img-bg"
+              @click="onProductClick(p)"
+            >
+              <img
+                :src="productCoverUrl(p)"
+                :alt="`${p.brand} ${p.name}`"
+                class="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                loading="lazy"
+              />
+
+              <div class="absolute top-3 left-3 flex gap-1.5">
+                <span
+                  v-if="discountPct(p) > 0"
+                  class="tag"
+                  style="background: rgba(248,113,113,0.18); color: #fca5a5; backdrop-filter: blur(6px)"
+                >
+                  −{{ discountPct(p) }}%
+                </span>
+                <span
+                  v-if="p.featured"
+                  class="tag"
+                  style="background: rgba(250,204,21,0.16); color: #fde047; backdrop-filter: blur(6px)"
+                >
+                  bán chạy
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="icon-btn absolute top-2.5 right-2.5 w-9 h-9"
+                :style="{
+                  color: isFavorite(p.id) ? '#f87171' : 'var(--text-2)',
+                  background: isFavorite(p.id) ? 'rgba(248,113,113,0.16)' : 'color-mix(in srgb, var(--bg) 55%, transparent)',
+                }"
+                :aria-pressed="isFavorite(p.id)"
+                :aria-label="isFavorite(p.id) ? `Bỏ ${p.name} khỏi yêu thích` : `Lưu ${p.name} vào yêu thích`"
+                @click.stop="toggleFavorite(p.id)"
               >
-                {{ formatCurrency(p.original_price) }}
+                <Icon name="heart" :size="17" />
+              </button>
+
+              <span
+                v-if="p.stock === 0"
+                class="absolute inset-x-0 bottom-0 py-1.5 text-center text-[11px] font-semibold"
+                style="background: color-mix(in srgb, var(--bg) 82%, transparent); color: var(--text-2)"
+              >
+                Tạm hết hàng
               </span>
             </div>
-            <motion.button
-              class="w-full py-3 sm:py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed relative overflow-hidden min-h-[44px]"
-              :style="cartBtnStyle(p, addedId === p.id, inCart(p.id))"
-              :disabled="p.stock === 0"
-              :while-hover="p.stock > 0 ? { scale: 1.02 } : {}"
-              :while-tap="p.stock > 0 ? { scale: 0.97 } : {}"
-              @click.stop="addToCart(p.id)"
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  :key="addedId === p.id ? 'added' : 'normal'"
-                  :initial="{ opacity: 0, y: 6 }"
-                  :animate="{ opacity: 1, y: 0 }"
-                  :exit="{ opacity: 0, y: -6 }"
-                  :transition="{ duration: 0.2 }"
+
+            <div class="p-4 flex flex-col flex-1">
+              <p class="text-[10.5px] uppercase tracking-[0.1em]" style="color: var(--text-3)">
+                {{ p.brand }} · {{ categoryLabels[p.category] }}
+              </p>
+              <h3
+                class="font-semibold text-[14px] leading-snug mt-1.5 cursor-pointer line-clamp-2"
+                @click="onProductClick(p)"
+              >
+                {{ p.name }}
+              </h3>
+
+              <div class="mt-2">
+                <Stars :rating="p.rating" />
+              </div>
+
+              <div class="flex items-baseline gap-2 mt-3">
+                <span class="mono text-[16px] font-medium" style="color: var(--accent)">
+                  {{ formatCurrency(p.price) }}
+                </span>
+                <span
+                  v-if="p.original_price && p.original_price > p.price"
+                  class="mono text-[12px] line-through"
+                  style="color: var(--text-3)"
                 >
-                  {{ cartBtnLabel(p, addedId === p.id, inCart(p.id)) }}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+                  {{ formatCurrency(p.original_price) }}
+                </span>
+              </div>
+
+              <!-- Pinned so CTAs align across cards of different title lengths -->
+              <motion.button
+                type="button"
+                class="w-full mt-auto py-3 rounded-xl text-[13px] font-bold disabled:opacity-35 disabled:cursor-not-allowed"
+                :class="isOwned(p) ? 'btn-owned' : 'btn-primary'"
+                :disabled="p.stock === 0"
+                :while-tap="p.stock > 0 ? { scale: 0.98 } : {}"
+                @click.stop="addToCart(p.id)"
+              >
+                {{ cartBtnLabel(p, addedId === p.id, inCart(p.id)) }}
+              </motion.button>
+            </div>
+          </motion.article>
+        </AnimatePresence>
+      </div>
+    </div>
+
+    <nav
+      v-if="pagination.last_page > 1"
+      class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10"
+      aria-label="Phân trang sản phẩm"
+    >
+      <p class="mono text-[12.5px]" style="color: var(--text-3)">
+        Trang {{ pagination.current_page }} / {{ pagination.last_page.toLocaleString('vi-VN') }}
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-1.5">
+        <button
+          type="button"
+          class="icon-btn disabled:opacity-30"
+          aria-label="Trang trước"
+          :disabled="pagination.current_page <= 1 || loading"
+          @click="goToPage(pagination.current_page - 1)"
+        >
+          <Icon name="arrowLeft" :size="17" />
+        </button>
+
+        <button
+          v-for="n in pageNumbers"
+          :key="n"
+          type="button"
+          class="w-10 h-10 rounded-xl mono text-[13px] transition-colors"
+          :style="n === pagination.current_page
+            ? { background: 'var(--accent)', color: '#0a1200', fontWeight: 700 }
+            : { background: 'rgba(255,255,255,0.04)', color: 'var(--text-2)', border: '1px solid var(--line)' }"
+          :aria-current="n === pagination.current_page ? 'page' : undefined"
+          :disabled="loading"
+          @click="goToPage(n)"
+        >
+          {{ n }}
+        </button>
+
+        <button
+          type="button"
+          class="icon-btn disabled:opacity-30"
+          aria-label="Trang sau"
+          :disabled="!pagination.has_more_pages || loading"
+          @click="goToPage(pagination.current_page + 1)"
+        >
+          <Icon name="arrowRight" :size="17" />
+        </button>
+      </div>
+    </nav>
   </div>
 </template>

@@ -1,13 +1,16 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import AuthShell from './AuthShell.vue'
 import FormField from '../common/FormField.vue'
 import { useAuth } from '../../composables/useAuth'
 
-const emit = defineEmits(['goto'])
-
+const router = useRouter()
 const { forgotPassword, resetPassword, loading, apiErrorMessage } = useAuth()
+
+let redirectTimer = null
+onUnmounted(() => clearTimeout(redirectTimer))
 
 const step = ref('request')
 const email = ref('')
@@ -53,7 +56,7 @@ async function onReset() {
       password_confirmation: passwordConfirmation.value,
     })
     success.value = 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập.'
-    setTimeout(() => emit('goto', 'login'), 1200)
+    redirectTimer = setTimeout(() => router.replace({ name: 'login' }), 1200)
   } catch (err) {
     error.value = apiErrorMessage(err, 'Không thể đặt lại mật khẩu')
   }
@@ -104,9 +107,9 @@ async function onReset() {
     </form>
 
     <p class="text-center text-sm mt-5" style="color: #64748b">
-      <button type="button" class="font-semibold" style="color: #84cc16" @click="emit('goto', 'login')">
+      <RouterLink :to="{ name: 'login' }" class="font-semibold" style="color: #84cc16">
         ← Quay lại đăng nhập
-      </button>
+      </RouterLink>
     </p>
   </AuthShell>
 </template>

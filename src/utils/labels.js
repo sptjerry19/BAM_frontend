@@ -40,11 +40,12 @@ export function formatCurrency(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
 
-export function productImageUrl(image) {
-  if (!image) return 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=300&fit=crop'
+export function productImageUrl(image, { w = 400, h = 300 } = {}) {
+  const crop = `w=${w}&h=${h}&fit=crop`
+  if (!image) return `https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?${crop}`
   if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) return image
   if (image.includes('/')) return image.startsWith('/') ? image : `/${image}`
-  return `https://images.unsplash.com/${image}?w=400&h=300&fit=crop`
+  return `https://images.unsplash.com/${image}?${crop}`
 }
 
 /** Prefer first of images[], then legacy image field. */

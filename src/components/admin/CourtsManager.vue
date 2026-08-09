@@ -172,12 +172,12 @@ async function remove(id) {
               :transition="{ delay: i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }"
             >
               <td class="p-4">
-                <div class="font-medium" style="color: #f0f4ff">{{ court.name }}</div>
+                <div class="font-medium" style="color: var(--text)">{{ court.name }}</div>
                 <div class="text-xs mt-0.5 truncate max-w-[200px]" style="color: #64748b">{{ court.address }}</div>
               </td>
               <td class="p-4" style="color: #94a3b8">{{ court.district }}</td>
               <td class="p-4 mono" style="color: #84cc16">{{ formatCurrency(court.price) }}</td>
-              <td class="p-4 mono" style="color: #f0f4ff">{{ court.courts }}</td>
+              <td class="p-4 mono" style="color: var(--text)">{{ court.courts }}</td>
               <td class="p-4" style="color: #94a3b8">{{ court.hours }}</td>
               <td class="p-4"><StatusPill :status="court.status" /></td>
               <td class="p-4 text-right">

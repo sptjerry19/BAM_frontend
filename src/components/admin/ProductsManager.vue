@@ -62,7 +62,7 @@ function discountPct(product) {
 async function load() {
   loading.value = true
   try {
-    products.value = await getProducts()
+    products.value = (await getProducts(undefined, { per_page: 100 })).data
   } finally {
     loading.value = false
   }
@@ -247,7 +247,7 @@ async function remove(id) {
           <span
             v-if="(product.images || []).length > 1"
             class="absolute bottom-3 right-3 pill mono text-[10px]"
-            style="background: rgba(0,0,0,0.55); color: #f0f4ff"
+            style="background: rgba(0,0,0,0.55); color: var(--text)"
           >
             {{ product.images.length }} ảnh
           </span>
@@ -273,7 +273,7 @@ async function remove(id) {
               {{ product.brand }} · {{ categoryLabels[product.category] }}
             </span>
           </div>
-          <div class="font-medium truncate mb-2" style="color: #f0f4ff">{{ product.name }}</div>
+          <div class="font-medium truncate mb-2" style="color: var(--text)">{{ product.name }}</div>
           <div class="flex items-center justify-between">
             <div>
               <span class="font-bold mono" style="color: #84cc16">{{ formatCurrency(product.price) }}</span>

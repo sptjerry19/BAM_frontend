@@ -20,16 +20,16 @@ const maxCost = Math.max(...months.map((x) => x.v))
 const stats = computed(() => {
   if (!user.value) return []
   return [
-    { label: 'Điểm tích lũy', value: user.value.points, unit: 'pts', color: levelColors[user.value.level], delay: 0.2, isCost: false },
-    { label: 'Số trận đánh', value: user.value.matches, unit: 'trận', color: '#f0f4ff', delay: 0.25, isCost: false },
-    { label: 'Trận thắng', value: user.value.wins, unit: 'trận', color: '#facc15', delay: 0.3, isCost: false },
-    { label: 'Tổng chi tiêu', value: user.value.total_cost, unit: '', color: '#6366f1', delay: 0.35, isCost: true },
+    { label: 'Điểm tích lũy', value: user.value.points, unit: 'pts', color: 'var(--accent)', delay: 0.2, isCost: false },
+    { label: 'Số trận đánh', value: user.value.matches, unit: 'trận', color: 'var(--text)', delay: 0.25, isCost: false },
+    { label: 'Trận thắng', value: user.value.wins, unit: 'trận', color: 'var(--text)', delay: 0.3, isCost: false },
+    { label: 'Tổng chi tiêu', value: user.value.total_cost, unit: '', color: 'var(--text)', delay: 0.35, isCost: true },
   ]
 })
 
 const bars = computed(() => [
-  { label: `Thắng (${user.value?.wins ?? 0})`, pct: winRate.value, color: '#84cc16' },
-  { label: `Thua (${(user.value?.matches ?? 0) - (user.value?.wins ?? 0)})`, pct: 100 - winRate.value, color: '#6366f1' },
+  { label: `Thắng (${user.value?.wins ?? 0})`, pct: winRate.value, color: '#a3e635' },
+  { label: `Thua (${(user.value?.matches ?? 0) - (user.value?.wins ?? 0)})`, pct: 100 - winRate.value, color: '#5f6d84' },
 ])
 
 function formatJoinDate(d) {
@@ -39,23 +39,21 @@ function formatJoinDate(d) {
 </script>
 
 <template>
-  <div v-if="user" class="space-y-6 max-w-2xl">
-    <motion.div :initial="{ opacity: 0, y: -10 }" :animate="{ opacity: 1, y: 0 }">
-      <h1 class="font-heading" style="font-size: 30px; font-weight: 800; letter-spacing: -0.5px">
-        Hồ sơ cá nhân
-      </h1>
-    </motion.div>
+  <div v-if="user" class="space-y-6 max-w-3xl">
+    <header>
+      <h1 class="page-title">Hồ sơ của bạn</h1>
+      <p class="lede mt-3">Theo dõi điểm tích lũy, phong độ và chi phí sân theo từng tháng.</p>
+    </header>
 
     <motion.div
-      class="rounded-3xl overflow-hidden relative"
-      style="border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.04)"
+      class="surface overflow-hidden relative"
       :initial="{ opacity: 0, y: 20 }"
       :animate="{ opacity: 1, y: 0 }"
       :transition="{ delay: 0.1 }"
     >
       <div
-        class="h-28 relative overflow-hidden"
-        style="background: linear-gradient(135deg, rgba(132,204,22,0.15), rgba(99,102,241,0.1), rgba(7,11,20,0))"
+        class="h-28 relative overflow-hidden court-lines"
+        style="background: linear-gradient(135deg, rgba(163,230,53,0.18), rgba(163,230,53,0.04), transparent)"
       >
         <div
           class="absolute inset-0"
@@ -190,5 +188,11 @@ function formatJoinDate(d) {
       </div>
     </motion.div>
   </div>
-  <div v-else class="rounded-2xl h-64 shimmer" style="background: rgba(255,255,255,0.04)" />
+  <div v-else class="space-y-6 max-w-3xl">
+    <div class="skeleton h-11 w-64" />
+    <div class="skeleton h-56" style="border-radius: var(--r-lg)" />
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div v-for="n in 4" :key="n" class="skeleton h-24" style="border-radius: var(--r-md)" />
+    </div>
+  </div>
 </template>

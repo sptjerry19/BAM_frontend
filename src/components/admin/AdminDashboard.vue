@@ -76,7 +76,7 @@ function statusBarColor(status) {
         </div>
         <div
           class="text-2xl font-bold mb-1 relative"
-          :style="{ color: card.color, fontFamily: `'Plus Jakarta Sans', sans-serif` }"
+          :style="{ color: card.color, fontFamily: `'Be Vietnam Pro', sans-serif` }"
         >
           <AnimatedNumber
             v-if="card.format === 'currency'"
@@ -96,7 +96,7 @@ function statusBarColor(status) {
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: 0.35, duration: 0.4 }"
       >
-        <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: #f0f4ff; margin-bottom: 16px">
+        <h2 style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 16px">
           Thành viên hoạt động
         </h2>
         <div class="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -109,11 +109,11 @@ function statusBarColor(status) {
               <img :src="member.avatar" :alt="member.name" class="w-10 h-10 rounded-full object-cover" />
               <span
                 class="absolute bottom-0 w-2.5 h-2.5 rounded-full border-2"
-                style="background: #84cc16; border-color: #070b14"
+                style="background: var(--accent); border-color: var(--bg)"
               />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium truncate" style="color: #f0f4ff">{{ member.name }}</div>
+              <div class="text-sm font-medium truncate" style="color: var(--text)">{{ member.name }}</div>
               <div
                 class="text-xs mono"
                 :style="{ color: levelColors[member.level] || '#64748b' }"
@@ -132,13 +132,13 @@ function statusBarColor(status) {
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: 0.42, duration: 0.4 }"
       >
-        <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: #f0f4ff; margin-bottom: 16px">
+        <h2 style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 16px">
           Trạng thái sân
         </h2>
         <div class="space-y-4">
           <div v-for="court in stats.courtStatuses" :key="court.id">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm truncate mr-2" style="color: #f0f4ff">{{ court.name }}</span>
+              <span class="text-sm truncate mr-2" style="color: var(--text)">{{ court.name }}</span>
               <StatusPill :status="court.status" />
             </div>
             <div class="h-1.5 rounded-full overflow-hidden" style="background: rgba(255,255,255,0.06)">
@@ -160,7 +160,7 @@ function statusBarColor(status) {
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: 0.5, duration: 0.4 }"
       >
-        <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: #f0f4ff; margin-bottom: 16px">
+        <h2 style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 16px">
           Sản phẩm nổi bật
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -179,7 +179,7 @@ function statusBarColor(status) {
               class="w-full h-32 object-cover"
             />
             <div class="p-3">
-              <div class="text-sm font-medium truncate" style="color: #f0f4ff">{{ product.name }}</div>
+              <div class="text-sm font-medium truncate" style="color: var(--text)">{{ product.name }}</div>
               <div class="text-sm font-bold mt-1 mono" style="color: #84cc16">{{ formatCurrency(product.price) }}</div>
               <Stars :rating="product.rating" class="mt-1.5" />
             </div>

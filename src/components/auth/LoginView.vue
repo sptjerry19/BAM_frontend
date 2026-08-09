@@ -1,12 +1,13 @@
 <script setup>
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import AuthShell from './AuthShell.vue'
 import FormField from '../common/FormField.vue'
 import { useAuth } from '../../composables/useAuth'
 
-const emit = defineEmits(['goto'])
-
+const route = useRoute()
+const router = useRouter()
 const { login, loading, apiErrorMessage } = useAuth()
 
 const email = ref('')
@@ -20,7 +21,10 @@ async function onSubmit() {
     return
   }
   try {
-    await login(email.value.trim(), password.value)
+    const account = await login(email.value.trim(), password.value)
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
+    if (redirect) router.replace(redirect)
+    else router.replace({ name: account?.role === 'admin' ? 'admin-dashboard' : 'courts' })
   } catch (err) {
     error.value = apiErrorMessage(err, 'Đăng nhập thất bại')
   }
@@ -34,14 +38,13 @@ async function onSubmit() {
       <FormField v-model="password" label="Mật khẩu" type="password" placeholder="••••••••" />
 
       <div class="flex justify-end">
-        <button
-          type="button"
+        <RouterLink
+          :to="{ name: 'forgot-password' }"
           class="text-xs font-semibold"
           style="color: #84cc16"
-          @click="emit('goto', 'forgot')"
         >
           Quên mật khẩu?
-        </button>
+        </RouterLink>
       </div>
 
       <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
@@ -58,9 +61,9 @@ async function onSubmit() {
 
     <p class="text-center text-sm mt-5" style="color: #64748b">
       Chưa có tài khoản?
-      <button type="button" class="font-semibold ml-1" style="color: #84cc16" @click="emit('goto', 'register')">
+      <RouterLink :to="{ name: 'register' }" class="font-semibold ml-1" style="color: #84cc16">
         Đăng ký
-      </button>
+      </RouterLink>
     </p>
 
     <div

@@ -14,6 +14,7 @@ const emit = defineEmits(['close', 'add-to-cart', 'toggle-fav', 'add-to-equipmen
 
 const user = inject('user')
 const addToEquipmentFn = inject('addToEquipment', null)
+const requireAuth = inject('requireAuth', null)
 
 const tab = ref('info')
 const reviews = ref([])
@@ -90,15 +91,20 @@ async function loadReviews() {
 }
 
 async function submitReview() {
+  if (requireAuth && !requireAuth()) return
   if (!reviewText.value.trim()) {
     reviewError.value = 'Vui lòng nhập nội dung đánh giá'
+    return
+  }
+  if (!user.value?.id) {
+    reviewError.value = 'Vui lòng đăng nhập để gửi đánh giá'
     return
   }
   reviewError.value = ''
   submittingReview.value = true
   try {
     const created = await createProductReview(props.product.id, {
-      member_id: user.value?.id || 'm1',
+      member_id: user.value.id,
       user_name: user.value?.name,
       avatar: user.value?.avatar,
       rating: reviewRating.value,
@@ -140,7 +146,8 @@ onMounted(loadReviews)
 
 <template>
   <motion.div
-    class="fixed inset-0 modal-backdrop z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    class="fixed inset-0 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+    style="z-index: var(--z-modal)"
     :initial="{ opacity: 0 }"
     :animate="{ opacity: 1 }"
     :exit="{ opacity: 0 }"
@@ -400,7 +407,7 @@ onMounted(loadReviews)
 
       <div
         class="absolute bottom-0 inset-x-0 p-4 pb-safe sm:relative sm:pb-4 shrink-0 space-y-2"
-        style="background: linear-gradient(to top, #0d1424 70%, transparent); border-top: 1px solid rgba(255,255,255,0.06)"
+        style="background: linear-gradient(to top, var(--bg-2) 70%, transparent); border-top: 1px solid var(--line)"
       >
         <div class="flex gap-2">
           <motion.button

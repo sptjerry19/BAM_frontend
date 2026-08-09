@@ -22,7 +22,12 @@ export const deleteCourt = (id) => api.delete(`${AUTH}/courts/${id}`)
 export const getProducts = (category, params = {}) =>
   api
     .get(`${AUTH}/products`, { params: { ...params, ...(category ? { category } : {}) } })
-    .then((r) => r.data)
+    .then((r) => ({
+      data: Array.isArray(r.data) ? r.data : [],
+      pagination: r.api?.meta?.pagination ?? null,
+    }))
+export const getBestsellers = () =>
+  api.get(`${AUTH}/products/bestsellers`).then((r) => (Array.isArray(r.data) ? r.data : []))
 export const createProduct = (data) => {
   if (data instanceof FormData) {
     return api.post(`${AUTH}/products`, data).then((r) => r.data)

@@ -1,76 +1,41 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
-import AdminApp from './components/admin/AdminApp.vue'
-import UserApp from './components/user/UserApp.vue'
-import LoginView from './components/auth/LoginView.vue'
-import RegisterView from './components/auth/RegisterView.vue'
-import ForgotPasswordView from './components/auth/ForgotPasswordView.vue'
 import { useAuth } from './composables/useAuth'
+import SiteIntro from './components/common/SiteIntro.vue'
 
-const { bootstrap, bootstrapped, isAuthenticated, isAdmin, logout, user } = useAuth()
+const route = useRoute()
+const { bootstrapped } = useAuth()
 
-const authPage = ref('login')
-
-onMounted(() => {
-  bootstrap()
-})
-
-watch(isAuthenticated, (ok) => {
-  if (!ok) authPage.value = 'login'
-})
-
-function onGoto(page) {
-  authPage.value = page
-}
-
-async function onLogout() {
-  await logout()
-  authPage.value = 'login'
-}
+/**
+ * Keying on the top-level matched record keeps a layout mounted while its child
+ * routes change, so only whole-section switches (auth <-> app) cross-fade.
+ */
+const sectionKey = computed(() => route.matched[0]?.path ?? route.path)
 </script>
 
 <template>
-  <div v-if="!bootstrapped" class="min-h-[100dvh] flex items-center justify-center" style="background: #070b14">
-    <div class="text-sm" style="color: #64748b">Đang tải...</div>
-  </div>
+  <SiteIntro :ready="bootstrapped" />
 
-  <AnimatePresence v-else mode="wait">
-    <motion.div
-      v-if="isAuthenticated && isAdmin"
-      key="admin"
-      class="h-screen"
-      :initial="{ opacity: 0, scale: 0.98 }"
-      :animate="{ opacity: 1, scale: 1 }"
-      :exit="{ opacity: 0, scale: 0.98 }"
-      :transition="{ duration: 0.28 }"
-    >
-      <AdminApp :auth-user="user" @logout="onLogout" />
-    </motion.div>
+  <div
+    v-if="!bootstrapped"
+    class="min-h-[100dvh]"
+    style="background: var(--bg)"
+    aria-hidden="true"
+  />
 
-    <motion.div
-      v-else-if="isAuthenticated"
-      key="user"
-      class="h-screen"
-      :initial="{ opacity: 0, scale: 0.98 }"
-      :animate="{ opacity: 1, scale: 1 }"
-      :exit="{ opacity: 0, scale: 0.98 }"
-      :transition="{ duration: 0.28 }"
-    >
-      <UserApp :auth-user="user" @logout="onLogout" />
-    </motion.div>
-
-    <motion.div
-      v-else
-      :key="authPage"
-      :initial="{ opacity: 0, y: 12 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :exit="{ opacity: 0, y: -8 }"
-      :transition="{ duration: 0.28 }"
-    >
-      <LoginView v-if="authPage === 'login'" @goto="onGoto" />
-      <RegisterView v-else-if="authPage === 'register'" @goto="onGoto" />
-      <ForgotPasswordView v-else @goto="onGoto" />
-    </motion.div>
-  </AnimatePresence>
+  <RouterView v-else v-slot="{ Component }">
+    <AnimatePresence mode="wait">
+      <motion.div
+        :key="sectionKey"
+        :initial="{ opacity: 0 }"
+        :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0 }"
+        :transition="{ duration: 0.24 }"
+      >
+        <component :is="Component" />
+      </motion.div>
+    </AnimatePresence>
+  </RouterView>
 </template>
