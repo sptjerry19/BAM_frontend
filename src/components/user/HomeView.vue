@@ -58,7 +58,7 @@ const pinSlides = [
     id: 'p1',
     title: 'Đêm trong nhà',
     copy: 'Đèn vàng trên mặt sân, cầu cắt không khí.',
-    image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1400&h=900&fit=crop',
+    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1400&h=900&fit=crop',
   },
   {
     id: 'p2',
@@ -158,7 +158,7 @@ function go(name) {
       <div class="home-hero__bg" aria-hidden="true">
         <motion.img
           class="home-hero__bg-img"
-          src="https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1920&h=1280&fit=crop"
+          src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1400&h=900&fit=crop"
           alt=""
           :style="reducedMotion ? undefined : { y: heroImgY, scale: heroImgScale }"
         />

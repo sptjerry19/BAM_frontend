@@ -1,5 +1,21 @@
-# Vue 3 + Vite
+# Vue frontend — JBadminton
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Dev
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+```bash
+npm install
+npm run dev
+```
+
+Mặc định gọi API `http://localhost:8000/api`. Đổi bằng `.env`:
+
+```env
+VITE_API_URL=http://localhost/api
+```
+
+## Docker (repo FE riêng)
+
+```bash
+docker build --build-arg VITE_API_URL=http://YOUR_API_HOST/api -t jb-frontend .
+docker run -d -p 80:80 jb-frontend
+```

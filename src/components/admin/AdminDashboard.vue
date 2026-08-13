@@ -127,7 +127,7 @@ function statusBarColor(status) {
       </motion.div>
 
       <motion.div
-        class="glass rounded-2xl p-6 grid grid-cols-2 lg:grid-cols-4"
+        class="glass rounded-2xl p-6 grid grid-cols-2"
         :initial="{ opacity: 0, y: 16 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: 0.42, duration: 0.4 }"
