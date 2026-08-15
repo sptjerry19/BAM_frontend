@@ -149,12 +149,9 @@ onUnmounted(() => {
 <template>
   <section ref="sectionRef" class="home-tops" aria-labelledby="tops-title">
     <div class="shell home-tops__head">
-      <p class="eyebrow">
-        <Icon name="bolt" :size="14" />
-        Bán chạy tuần này
-      </p>
-      <h2 id="tops-title" class="section-head">Top 5 trang bị</h2>
-      <p class="lede mt-2.5 text-[14.5px]">
+      <p class="eyebrow">Trending</p>
+      <h2 id="tops-title" class="section-head">Bán chạy tuần này</h2>
+      <p class="lede mt-2.5 text-[15px]">
         Xếp theo số lượng đã bán — vuốt hoặc chờ vòng quay tự động.
       </p>
     </div>

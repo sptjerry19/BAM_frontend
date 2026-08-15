@@ -1,22 +1,22 @@
 <!doctype html>
-<html lang="vi" class="theme-dark">
+<html lang="vi" class="theme-light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#070b14" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="mobile-web-app-capable" content="yes" />
     <script>
       (function () {
         try {
           var t = localStorage.getItem('jb_theme')
-          if (t !== 'light' && t !== 'dark') t = 'dark'
+          if (t !== 'light' && t !== 'dark') t = 'light'
           var r = document.documentElement
           r.classList.remove('theme-light', 'theme-dark')
           r.classList.add(t === 'light' ? 'theme-light' : 'theme-dark')
           r.style.colorScheme = t
           var m = document.querySelector('meta[name="theme-color"]')
-          if (m) m.setAttribute('content', t === 'light' ? '#f4f7fb' : '#070b14')
+          if (m) m.setAttribute('content', t === 'light' ? '#ffffff' : '#111111')
         } catch (e) {}
       })()
     </script>

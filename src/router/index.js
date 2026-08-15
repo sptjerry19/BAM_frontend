@@ -5,6 +5,7 @@ import UserApp from '../components/user/UserApp.vue'
 import HomeView from '../components/user/HomeView.vue'
 import MapView from '../components/user/MapView.vue'
 import ShopView from '../components/user/ShopView.vue'
+import ProductDetailView from '../components/user/ProductDetailView.vue'
 import CartView from '../components/user/CartView.vue'
 import EquipmentView from '../components/user/EquipmentView.vue'
 import FavoritesView from '../components/user/FavoritesView.vue'
@@ -61,7 +62,13 @@ const routes = [
         component: MapView,
         meta: { fullBleed: true, title: 'Đặt sân' },
       },
-      { path: 'shop', name: 'shop', component: ShopView, meta: { title: 'Cửa hàng' } },
+      { path: 'shop', name: 'shop', component: ShopView, meta: { fullBleed: true, title: 'Cửa hàng' } },
+      {
+        path: 'shop/:id',
+        name: 'product-detail',
+        component: ProductDetailView,
+        meta: { fullBleed: true, title: 'Chi tiết sản phẩm' },
+      },
       { path: 'cart', name: 'cart', component: CartView, meta: { title: 'Giỏ hàng' } },
       { path: 'favorites', name: 'favorites', component: FavoritesView, meta: { title: 'Yêu thích' } },
       {

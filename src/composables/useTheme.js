@@ -10,14 +10,14 @@ const isDark = computed(() => theme.value === 'dark')
 const isLight = computed(() => theme.value === 'light')
 
 function readInitial() {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'light'
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === 'light' || saved === 'dark') return saved
   } catch {
     /* private mode */
   }
-  return 'dark'
+  return 'light'
 }
 
 function apply(next) {
@@ -26,7 +26,7 @@ function apply(next) {
   root.classList.toggle('theme-dark', next === 'dark')
   root.style.colorScheme = next
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', next === 'light' ? '#f4f7fb' : '#070b14')
+  if (meta) meta.setAttribute('content', next === 'light' ? '#ffffff' : '#111111')
 }
 
 function setTheme(next) {

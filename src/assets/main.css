@@ -3,15 +3,17 @@
 
 @import 'tailwindcss';
 @import './home.css';
+@import './shop.css';
 
 @theme {
-  --color-dark: #070b14;
-  --color-text: #f0f4ff;
-  --color-lime: #84cc16;
+  --color-dark: #111111;
+  --color-text: #111111;
+  --color-lime: #111111;
   --color-yellow: #facc15;
-  --color-indigo: #6366f1;
-  --font-heading: 'Be Vietnam Pro', sans-serif;
-  --font-body: 'Be Vietnam Pro', sans-serif;
+  --color-indigo: #757575;
+  /* Helvetica Neue first (Nike-like), Be Vietnam Pro for Vietnamese glyphs */
+  --font-heading: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+  --font-body: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -19,52 +21,47 @@
 html.theme-dark {
   color-scheme: dark;
 
-  /* Surfaces — one cool-navy family, no warm/cool mixing */
-  --bg: #070b14;
-  --bg-1: #0b111d;
-  --bg-2: #111a2a;
-  --bg-3: #18233a;
+  /* Nike night — near-black, not navy */
+  --bg: #111111;
+  --bg-1: #1a1a1a;
+  --bg-2: #222222;
+  --bg-3: #2a2a2a;
 
-  /* Single accent: volt green (shuttlecock feather under court lights) */
-  --accent: #a3e635;
-  --accent-deep: #84cc16;
-  --accent-soft: rgba(163, 230, 53, 0.12);
-  --accent-line: rgba(163, 230, 53, 0.28);
-  --on-accent: #0a1200;
+  --accent: #ffffff;
+  --accent-deep: #e5e5e5;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --accent-line: rgba(255, 255, 255, 0.22);
+  --on-accent: #111111;
 
-  /* Text ramp */
-  --text: #eef3fb;
-  --text-2: #97a6bd;
-  --text-3: #5f6d84;
+  --text: #f5f5f5;
+  --text-2: #b0b0b0;
+  --text-3: #757575;
 
-  /* Hairlines */
-  --line: rgba(148, 163, 184, 0.1);
-  --line-2: rgba(148, 163, 184, 0.18);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-2: rgba(255, 255, 255, 0.2);
 
-  /* Tinted shadows — carry the background hue, never pure black */
-  --shadow-sm: 0 1px 2px rgba(4, 8, 16, 0.5);
-  --shadow-md: 0 10px 24px -12px rgba(4, 8, 16, 0.85);
-  --shadow-lg: 0 28px 60px -28px rgba(4, 8, 16, 0.95);
-  --shadow-accent: 0 18px 44px -22px rgba(132, 204, 22, 0.55);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 48px -24px rgba(0, 0, 0, 0.7);
+  --shadow-accent: none;
 
-  --nav-bg: rgba(7, 11, 20, 0.72);
-  --glass: rgba(255, 255, 255, 0.04);
-  --glass-strong: rgba(255, 255, 255, 0.07);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --input-bg: rgba(255, 255, 255, 0.04);
-  --input-bg-solid: #0d1424;
-  --scrim: rgba(7, 11, 20, 0.85);
-  --bottom-nav-bg: rgba(7, 11, 20, 0.9);
-  --hero-scrim: rgba(7, 11, 20, 0.94);
+  --nav-bg: rgba(17, 17, 17, 0.92);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(26, 26, 26, 0.96);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-bg-solid: #1a1a1a;
+  --scrim: rgba(17, 17, 17, 0.72);
+  --bottom-nav-bg: rgba(17, 17, 17, 0.94);
+  --hero-scrim: rgba(17, 17, 17, 0.55);
 
-  /* Radii — softer on containers, tighter inside */
-  --r-xs: 8px;
-  --r-sm: 12px;
-  --r-md: 16px;
-  --r-lg: 22px;
-  --r-xl: 30px;
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-pill: 999px;
 
-  /* z-index scale — no arbitrary 9999 */
   --z-base: 1;
   --z-sticky: 30;
   --z-nav: 40;
@@ -74,102 +71,103 @@ html.theme-dark {
   --z-intro: 100;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --shell-max: 1320px;
+  --shell-max: 1440px;
   --theme-duration: 3.52s;
 }
 
 html.theme-light {
   color-scheme: light;
 
-  --bg: #f4f7fb;
+  /* Nike day — white storefront */
+  --bg: #ffffff;
   --bg-1: #ffffff;
-  --bg-2: #eef2f7;
-  --bg-3: #e2e8f0;
+  --bg-2: #f5f5f5;
+  --bg-3: #e5e5e5;
 
-  --accent: #65a30d;
-  --accent-deep: #4d7c0f;
-  --accent-soft: rgba(101, 163, 13, 0.12);
-  --accent-line: rgba(101, 163, 13, 0.32);
-  --on-accent: #f7fee7;
+  --accent: #111111;
+  --accent-deep: #000000;
+  --accent-soft: rgba(17, 17, 17, 0.06);
+  --accent-line: rgba(17, 17, 17, 0.18);
+  --on-accent: #ffffff;
 
-  --text: #0f172a;
-  --text-2: #475569;
-  --text-3: #64748b;
+  --text: #111111;
+  --text-2: #757575;
+  --text-3: #8d8d8d;
 
-  --line: rgba(15, 23, 42, 0.08);
-  --line-2: rgba(15, 23, 42, 0.14);
+  --line: rgba(17, 17, 17, 0.1);
+  --line-2: rgba(17, 17, 17, 0.16);
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 10px 24px -12px rgba(15, 23, 42, 0.14);
-  --shadow-lg: 0 28px 60px -28px rgba(15, 23, 42, 0.18);
-  --shadow-accent: 0 18px 44px -22px rgba(101, 163, 13, 0.35);
+  --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.06);
+  --shadow-md: 0 8px 24px -12px rgba(17, 17, 17, 0.12);
+  --shadow-lg: 0 24px 48px -24px rgba(17, 17, 17, 0.18);
+  --shadow-accent: none;
 
-  --nav-bg: rgba(244, 247, 251, 0.82);
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-strong: rgba(255, 255, 255, 0.88);
-  --glass-border: rgba(15, 23, 42, 0.1);
-  --input-bg: rgba(15, 23, 42, 0.04);
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --glass: rgba(17, 17, 17, 0.04);
+  --glass-strong: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(17, 17, 17, 0.1);
+  --input-bg: rgba(17, 17, 17, 0.04);
   --input-bg-solid: #ffffff;
-  --scrim: rgba(15, 23, 42, 0.45);
-  --bottom-nav-bg: rgba(255, 255, 255, 0.92);
-  --hero-scrim: rgba(15, 23, 42, 0.55);
+  --scrim: rgba(17, 17, 17, 0.45);
+  --bottom-nav-bg: rgba(255, 255, 255, 0.94);
+  --hero-scrim: rgba(17, 17, 17, 0.4);
 }
 
 /* Allow color tokens to interpolate during theme changes (fallback browsers) */
 @property --bg {
   syntax: '<color>';
   inherits: true;
-  initial-value: #070b14;
+  initial-value: #111111;
 }
 @property --bg-1 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #0b111d;
+  initial-value: #1a1a1a;
 }
 @property --bg-2 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #111a2a;
+  initial-value: #222222;
 }
 @property --bg-3 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #18233a;
+  initial-value: #2a2a2a;
 }
 @property --text {
   syntax: '<color>';
   inherits: true;
-  initial-value: #eef3fb;
+  initial-value: #f5f5f5;
 }
 @property --text-2 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #97a6bd;
+  initial-value: #b0b0b0;
 }
 @property --text-3 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #5f6d84;
+  initial-value: #757575;
 }
 @property --accent {
   syntax: '<color>';
   inherits: true;
-  initial-value: #a3e635;
+  initial-value: #ffffff;
 }
 @property --accent-deep {
   syntax: '<color>';
   inherits: true;
-  initial-value: #84cc16;
+  initial-value: #e5e5e5;
 }
 @property --on-accent {
   syntax: '<color>';
   inherits: true;
-  initial-value: #0a1200;
+  initial-value: #111111;
 }
 @property --input-bg-solid {
   syntax: '<color>';
   inherits: true;
-  initial-value: #0d1424;
+  initial-value: #1a1a1a;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -196,10 +194,10 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
-  letter-spacing: 0.005em;
+  font-family: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -377,10 +375,10 @@ p { text-wrap: pretty; }
 .glow-blue { box-shadow: 0 0 20px rgba(99,102,241,0.35); }
 
 .grad-lime {
-  background: linear-gradient(120deg, #d9f99d, var(--accent) 45%, var(--accent-deep));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text);
+  background: none;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
 }
 
 .grad-blue {
@@ -410,15 +408,16 @@ p { text-wrap: pretty; }
 }
 
 .mesh-bg {
-  background:
-    radial-gradient(ellipse 70% 45% at 12% 0%, rgba(163, 230, 53, 0.1) 0%, transparent 62%),
-    radial-gradient(ellipse 55% 55% at 88% 12%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .grid-dots {
-  background-image: radial-gradient(circle, rgba(132,204,22,0.12) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(17, 17, 17, 0.08) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+html.theme-dark .grid-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
 }
 
 @keyframes pulse-dot {
@@ -769,9 +768,41 @@ html.theme-light .hero-scrim {
   top: 0;
   z-index: var(--z-nav);
   background: var(--nav-bg);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
   border-bottom: 1px solid var(--line);
+}
+
+.pre-nav {
+  display: none;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (min-width: 768px) {
+  .pre-nav {
+    display: block;
+  }
+}
+
+.pre-nav__inner {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  height: 36px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.pre-nav__inner a {
+  color: inherit;
+  transition: color 0.2s var(--ease-out);
+}
+
+.pre-nav__inner a:hover {
+  color: var(--text);
 }
 
 .nav-link {
@@ -779,29 +810,18 @@ html.theme-light .hero-scrim {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 4px;
-  color: var(--text-2);
-  font-size: 14px;
+  padding: 10px 2px;
+  color: var(--text);
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: color 0.22s var(--ease-out);
+  letter-spacing: -0.02em;
+  transition: opacity 0.22s var(--ease-out);
 }
-.nav-link:hover { color: var(--text); }
-.nav-link[aria-current='page'] { color: var(--text); font-weight: 600; }
+.nav-link:hover { opacity: 0.6; }
+.nav-link[aria-current='page'] { font-weight: 700; opacity: 1; }
 .nav-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.28s var(--ease-out);
+  content: none;
 }
-.nav-link[aria-current='page']::after { transform: scaleX(1); }
 
 /* Mobile drawer entry — active state comes from RouterLink's aria-current */
 .drawer-link {
@@ -832,7 +852,7 @@ html.theme-light .hero-scrim {
   color: var(--text-3);
   transition: color 0.2s var(--ease-out);
 }
-.bottom-link[aria-current='page'] { color: var(--accent); }
+.bottom-link[aria-current='page'] { color: var(--text); }
 .bottom-link[aria-current='page']::before {
   content: '';
   position: absolute;
@@ -841,24 +861,101 @@ html.theme-light .hero-scrim {
   right: 0.5rem;
   height: 2.5px;
   border-radius: 99px;
-  background: var(--accent);
+  background: var(--text);
 }
 
-.icon-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--r-sm);
-  color: var(--text-2);
-  background: var(--glass);
-  border: 1px solid var(--line);
-  transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+/* Nike-style dark footer */
+.site-footer {
+  margin-top: clamp(48px, 8vh, 96px);
+  padding: 48px 0 28px;
+  background: #111111;
+  color: #f5f5f5;
 }
-.icon-btn:hover { color: var(--text); background: var(--glass-strong); }
-.icon-btn:active { transform: scale(0.94); }
+
+html.theme-dark .site-footer {
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.site-footer__grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .site-footer__grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+.site-footer h2 {
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #f5f5f5;
+}
+
+.site-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.site-footer a,
+.site-footer p {
+  color: #7e7e7e;
+  font-size: 12px;
+  line-height: 1.5;
+  transition: color 0.2s var(--ease-out);
+}
+
+.site-footer a:hover {
+  color: #f5f5f5;
+}
+
+.site-footer p {
+  margin: 0;
+  max-width: 28ch;
+}
+
+.site-footer__phone {
+  margin-top: 14px !important;
+}
+
+.site-footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  color: #7e7e7e;
+}
+
+/* @layer components so Tailwind utilities (md:hidden, w-9, …) can override */
+@layer components {
+  .icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+  }
+  .icon-btn:hover { color: var(--text); background: var(--glass-strong); }
+  .icon-btn:active { transform: scale(0.94); }
+}
 
 .count-badge {
   position: absolute;
@@ -871,8 +968,8 @@ html.theme-light .hero-scrim {
   align-items: center;
   justify-content: center;
   border-radius: 99px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--text);
+  color: var(--bg);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: 10px;
@@ -883,10 +980,10 @@ html.theme-light .hero-scrim {
 /* ---------- Type ---------- */
 
 .display {
-  font-family: 'Be Vietnam Pro', sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-family: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
   text-wrap: balance;
 }
 
@@ -894,38 +991,40 @@ html.theme-light .hero-scrim {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--text);
 }
 
 .lede {
   max-width: 58ch;
   color: var(--text-2);
   font-size: clamp(15px, 1.6vw, 17px);
-  line-height: 1.65;
+  line-height: 1.55;
 }
 
 .section-head {
-  font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: clamp(24px, 3.4vw, 36px);
+  font-family: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
   font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .page-title {
-  font-family: 'Be Vietnam Pro', sans-serif;
-  font-size: clamp(26px, 5.2vw, 40px);
-  font-weight: 800;
+  font-family: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 700;
   letter-spacing: -0.035em;
   color: var(--text);
-  line-height: 1.04;
+  line-height: 1.05;
 }
 
-.font-heading { font-family: 'Be Vietnam Pro', sans-serif; }
+.font-heading {
+  font-family: 'Helvetica Neue', Helvetica, 'Be Vietnam Pro', Arial, sans-serif;
+}
 
 /* ---------- Surfaces ---------- */
 
@@ -1018,61 +1117,56 @@ html.theme-light .hero-scrim {
 /* ---------- Buttons ---------- */
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  background: var(--accent);
   color: var(--on-accent);
-  font-weight: 700;
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-weight: 500;
+  font-family: inherit;
   letter-spacing: -0.01em;
-  box-shadow: var(--shadow-accent);
-  transition: transform 0.22s var(--ease-out), box-shadow 0.22s var(--ease-out);
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  transition: transform 0.22s var(--ease-out), opacity 0.22s var(--ease-out);
   position: relative;
   overflow: hidden;
 }
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0);
-  transition: background 0.2s;
-}
-.btn-primary:hover::after { background: rgba(255,255,255,0.14); }
-.btn-primary:hover { transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0) scale(0.985); }
-.btn-primary:disabled { box-shadow: none; transform: none; }
+.btn-primary::after { display: none; }
+.btn-primary:hover { transform: scale(1.02); opacity: 0.92; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { transform: none; opacity: 0.45; }
 
 .btn-ghost {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: var(--text-2);
-  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  border-radius: var(--r-pill);
+  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
 }
 .btn-ghost:hover {
-  background: rgba(255,255,255,0.09);
-  border-color: rgba(255,255,255,0.18);
-  color: var(--text);
+  background: var(--accent-soft);
+  border-color: var(--text);
 }
 .btn-ghost:active { transform: scale(0.985); }
 
-/* Confirmed state: item already in the cart or equipment list */
 .btn-owned {
-  background: rgba(163, 230, 53, 0.12);
+  background: var(--accent-soft);
   border: 1px solid var(--accent-line);
-  color: var(--accent);
+  color: var(--text);
+  border-radius: var(--r-pill);
   transition: background 0.2s var(--ease-out);
 }
-.btn-owned:hover { background: rgba(163, 230, 53, 0.19); }
+.btn-owned:hover { background: var(--bg-3); }
 
-/* Tertiary text action — reduces the filled/ghost button pairing */
 .btn-text {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 500;
   font-size: 14px;
-  transition: gap 0.22s var(--ease-out), color 0.22s var(--ease-out);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: opacity 0.22s var(--ease-out);
 }
-.btn-text:hover { gap: 10px; color: #d9f99d; }
+.btn-text:hover { opacity: 0.65; }
 
 .pill { border-radius: 99px; font-size: 11px; font-weight: 600; padding: 3px 10px; }
 

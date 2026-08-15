@@ -8,7 +8,6 @@ import { useAuth } from '../../composables/useAuth'
 import Icon from '../common/Icon.vue'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import BookingModal from './BookingModal.vue'
-import ProductDetailModal from './ProductDetailModal.vue'
 
 const CART_KEY = 'jb_cart'
 const FAV_KEY = 'jb_favorites'
@@ -30,7 +29,6 @@ const user = ref(null)
 const cart = ref(readJson(CART_KEY, []))
 const favorites = ref(readJson(FAV_KEY, []))
 const bookingCourt = ref(null)
-const productDetail = ref(null)
 const menuOpen = ref(false)
 const accountOpen = ref(false)
 
@@ -63,9 +61,6 @@ const bottomNavItems = computed(() => [
 const year = new Date().getFullYear()
 
 const cartCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0))
-const productDetailIsFav = computed(() =>
-  productDetail.value ? favorites.value.includes(productDetail.value.id) : false,
-)
 
 function addToCart(productId) {
   const existing = cart.value.find((i) => i.productId === productId)
@@ -133,11 +128,8 @@ function closeBooking() {
 }
 
 function openProductDetail(p) {
-  productDetail.value = p
-}
-
-function closeProductDetail() {
-  productDetail.value = null
+  if (!p?.id) return
+  router.push({ name: 'product-detail', params: { id: String(p.id) } })
 }
 
 provide('user', user)
@@ -153,18 +145,6 @@ provide('openProductDetail', openProductDetail)
 provide('openBooking', openBooking)
 provide('requireAuth', requireAuth)
 provide('goToShop', () => router.push({ name: 'shop' }))
-
-function onProductAddToCart() {
-  if (productDetail.value) addToCart(productDetail.value.id)
-}
-
-function onProductToggleFav() {
-  if (productDetail.value) toggleFavorite(productDetail.value.id)
-}
-
-async function onProductAddToEquipment(productId) {
-  await addToEquipment(productId)
-}
 
 function badgeCount(name) {
   if (name === 'cart') return cartCount.value
@@ -269,31 +249,48 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-[100dvh] mesh-bg grain">
+  <div class="min-h-[100dvh]" style="background: var(--bg)">
     <a class="skip-link" href="#main">Bỏ qua tới nội dung</a>
 
+    <div class="pre-nav" aria-label="Liên kết phụ">
+      <div class="shell pre-nav__inner">
+        <a href="#main">Tìm sân</a>
+        <a href="#main">Hỗ trợ</a>
+        <RouterLink
+          v-if="!isAuthenticated"
+          :to="{ name: 'login', query: { redirect: route.fullPath } }"
+        >
+          Đăng nhập
+        </RouterLink>
+        <RouterLink v-else :to="{ name: 'profile' }">Tài khoản</RouterLink>
+        <ThemeToggle />
+      </div>
+    </div>
+
     <header class="top-nav">
-      <div class="shell flex items-center gap-4 h-16 md:h-[74px]">
+      <div class="shell flex items-center gap-5 h-[60px] md:h-[64px]">
+        <button
+          type="button"
+          class="icon-btn md:hidden border-0 bg-transparent"
+          aria-label="Mở menu"
+          @click.stop="menuOpen = true"
+        >
+          <Icon name="menu" :size="22" />
+        </button>
+
         <RouterLink
           :to="{ name: 'home' }"
-          class="flex items-center gap-2.5 shrink-0"
+          class="shrink-0"
           aria-label="Về trang chủ JBadminton"
         >
-          <span
-            class="w-9 h-9 rounded-[13px] flex items-center justify-center"
-            style="background: linear-gradient(140deg, var(--accent), var(--accent-deep)); color: var(--on-accent); box-shadow: var(--shadow-accent)"
-          >
-            <Icon name="shuttlecock" :size="19" :stroke="1.9" />
-          </span>
-          <span class="hidden sm:block leading-none">
-            <span class="block font-heading text-[17px] font-extrabold tracking-tight">JBadminton</span>
-            <span class="block text-[10.5px] tracking-[0.16em] uppercase" style="color: var(--text-3)">sân · trang bị</span>
+          <span class="font-heading text-[22px] md:text-[24px] font-bold tracking-tight">
+            JBadminton
           </span>
         </RouterLink>
 
-        <nav class="hidden md:flex items-center gap-7 ml-6" aria-label="Điều hướng chính">
+        <nav class="hidden md:flex items-center gap-8 ml-8" aria-label="Điều hướng chính">
           <RouterLink
-            v-for="item in navItems"
+            v-for="item in navItems.filter((n) => n.name !== 'home')"
             :key="item.name"
             :to="{ name: item.name }"
             class="nav-link"
@@ -302,7 +299,7 @@ onUnmounted(() => {
             <span
               v-if="badgeCount(item.name) > 0"
               class="mono text-[10px] px-1.5 py-px rounded"
-              style="background: var(--accent-soft); color: var(--accent)"
+              style="background: var(--accent-soft); color: var(--text)"
             >
               {{ badgeCount(item.name) }}
             </span>
@@ -311,23 +308,25 @@ onUnmounted(() => {
 
         <div class="flex-1" />
 
-        <ThemeToggle />
+        <div class="md:hidden">
+          <ThemeToggle />
+        </div>
 
         <RouterLink
           :to="{ name: 'favorites' }"
-          class="icon-btn md:hidden"
+          class="icon-btn border-0 bg-transparent"
           :aria-label="`Yêu thích, ${favorites.length} mục`"
         >
-          <Icon name="heart" :size="19" />
+          <Icon name="heart" :size="20" />
           <span v-if="favorites.length" class="count-badge">{{ favorites.length }}</span>
         </RouterLink>
 
         <RouterLink
           :to="{ name: 'cart' }"
-          class="icon-btn"
+          class="icon-btn border-0 bg-transparent"
           :aria-label="`Giỏ hàng, ${cartCount} sản phẩm`"
         >
-          <Icon name="bag" :size="19" />
+          <Icon name="bag" :size="20" />
           <motion.span
             v-if="cartCount > 0"
             class="count-badge"
@@ -342,8 +341,7 @@ onUnmounted(() => {
         <div v-if="isAuthenticated" class="relative hidden md:block" data-account-menu>
           <button
             type="button"
-            class="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full transition-colors"
-            style="border: 1px solid var(--line)"
+            class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full transition-opacity hover:opacity-70"
             :aria-expanded="accountOpen"
             aria-haspopup="menu"
             @click="accountOpen = !accountOpen"
@@ -353,12 +351,8 @@ onUnmounted(() => {
               :src="user.avatar"
               :alt="`Ảnh đại diện của ${user.name}`"
               class="w-8 h-8 rounded-full object-cover"
-              :style="{ border: `2px solid ${levelColors[user.level]}55` }"
             />
             <span v-else class="w-8 h-8 rounded-full skeleton" />
-            <span class="text-[13px] font-semibold max-w-[104px] truncate">
-              {{ user?.name?.split(' ').slice(-1)[0] || 'Tài khoản' }}
-            </span>
             <Icon name="chevronDown" :size="15" />
           </button>
 
@@ -367,7 +361,7 @@ onUnmounted(() => {
               v-if="accountOpen"
               role="menu"
               class="absolute right-0 mt-2 w-60 p-2 glass-strong"
-              style="border-radius: var(--r-md); z-index: var(--z-nav)"
+              style="border-radius: var(--r-md); z-index: var(--z-nav); border: 1px solid var(--line)"
               :initial="{ opacity: 0, y: -6, scale: 0.97 }"
               :animate="{ opacity: 1, y: 0, scale: 1 }"
               :exit="{ opacity: 0, y: -6, scale: 0.97 }"
@@ -376,7 +370,7 @@ onUnmounted(() => {
               <div v-if="user" class="px-3 py-2.5 mb-1" style="border-bottom: 1px solid var(--line)">
                 <div class="text-[13px] font-semibold truncate">{{ user.name }}</div>
                 <div class="flex items-center gap-2 mt-1">
-                  <span class="mono text-[11px]" style="color: var(--accent)">
+                  <span class="mono text-[11px]" style="color: var(--text-2)">
                     {{ user.points.toLocaleString('vi-VN') }} điểm
                   </span>
                   <span style="color: var(--text-3)">·</span>
@@ -386,7 +380,7 @@ onUnmounted(() => {
               <RouterLink
                 :to="{ name: 'profile' }"
                 role="menuitem"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-colors hover:bg-white/5"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 <Icon name="user" :size="17" />
                 Hồ sơ của tôi
@@ -394,7 +388,7 @@ onUnmounted(() => {
               <RouterLink
                 :to="{ name: 'equipment' }"
                 role="menuitem"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-colors hover:bg-white/5"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 <Icon name="racket" :size="17" />
                 Trang bị
@@ -402,7 +396,7 @@ onUnmounted(() => {
               <RouterLink
                 :to="{ name: 'favorites' }"
                 role="menuitem"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-colors hover:bg-white/5"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 <Icon name="heart" :size="17" />
                 Yêu thích
@@ -410,8 +404,8 @@ onUnmounted(() => {
               <button
                 type="button"
                 role="menuitem"
-                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left transition-colors hover:bg-white/5"
-                style="color: #f87171"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] text-left transition-colors hover:bg-[var(--accent-soft)]"
+                style="color: #ef4444"
                 @click="onLogout"
               >
                 <Icon name="logout" :size="17" />
@@ -420,23 +414,6 @@ onUnmounted(() => {
             </motion.div>
           </AnimatePresence>
         </div>
-
-        <RouterLink
-          v-else
-          :to="{ name: 'login', query: { redirect: route.fullPath } }"
-          class="hidden md:inline-flex btn-primary items-center gap-2 px-4 py-2.5 rounded-xl text-[13px]"
-        >
-          Đăng nhập
-        </RouterLink>
-
-        <button
-          type="button"
-          class="icon-btn md:hidden"
-          aria-label="Mở menu"
-          @click.stop="menuOpen = true"
-        >
-          <Icon name="menu" :size="20" />
-        </button>
       </div>
     </header>
 
@@ -544,64 +521,51 @@ onUnmounted(() => {
       </RouterView>
     </main>
 
-    <footer class="mt-16 md:mt-24 pt-12 pb-10 md:pb-14" style="border-top: 1px solid var(--line)">
-      <div class="shell grid gap-9 md:grid-cols-[1.4fr_1fr_1fr]">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <span
-              class="w-8 h-8 rounded-[11px] flex items-center justify-center"
-              style="background: var(--accent-soft); color: var(--accent)"
-            >
-              <Icon name="shuttlecock" :size="17" />
-            </span>
-            <span class="font-heading text-[15px] font-extrabold tracking-tight">JBadminton</span>
-          </div>
-          <p class="lede mt-3.5 text-[13.5px]">
-            Đặt sân theo giờ ở Hà Nội và mua trang bị chính hãng trong cùng một chỗ.
-            Giá hiển thị đã gồm thuế, đổi trả trong 14 ngày.
-          </p>
-          <p class="mono mt-4 text-[12.5px]" style="color: var(--text-3)">
-            Hỗ trợ 6:00–22:30 · 024 7109 4482
-          </p>
-        </div>
-
-        <nav aria-label="Liên kết nhanh">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em]" style="color: var(--text-3)">
-            Khám phá
-          </h2>
-          <ul class="mt-3.5 space-y-2.5">
-            <li v-for="item in navItems.slice(0, 3)" :key="item.name">
+    <footer class="site-footer">
+      <div class="shell site-footer__grid">
+        <nav aria-label="Mua sắm">
+          <h2>Mua sắm</h2>
+          <ul>
+            <li><RouterLink :to="{ name: 'courts' }">Đặt sân</RouterLink></li>
+            <li><RouterLink :to="{ name: 'shop' }">Cửa hàng</RouterLink></li>
+            <li><RouterLink :to="{ name: 'favorites' }">Yêu thích</RouterLink></li>
+            <li><RouterLink :to="{ name: 'cart' }">Giỏ hàng</RouterLink></li>
+          </ul>
+        </nav>
+        <nav aria-label="Tài khoản">
+          <h2>Tài khoản</h2>
+          <ul>
+            <li>
               <RouterLink
-                :to="{ name: item.name }"
-                class="text-[13.5px] transition-colors hover:text-[color:var(--accent)]"
-                style="color: var(--text-2)"
+                :to="isAuthenticated ? { name: 'profile' } : { name: 'login' }"
               >
-                {{ item.label }}
+                {{ isAuthenticated ? 'Hồ sơ' : 'Đăng nhập' }}
               </RouterLink>
             </li>
+            <li><RouterLink :to="{ name: 'equipment' }">Trang bị</RouterLink></li>
+            <li><a href="#main">Đơn hàng</a></li>
           </ul>
         </nav>
-
-        <nav aria-label="Thông tin pháp lý">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em]" style="color: var(--text-3)">
-            Chính sách
-          </h2>
-          <ul class="mt-3.5 space-y-2.5">
-            <li v-for="link in ['Điều khoản sử dụng', 'Chính sách bảo mật', 'Đổi trả & hoàn tiền']" :key="link">
-              <a
-                href="#main"
-                class="text-[13.5px] transition-colors hover:text-[color:var(--accent)]"
-                style="color: var(--text-2)"
-              >
-                {{ link }}
-              </a>
-            </li>
+        <nav aria-label="Hỗ trợ">
+          <h2>Hỗ trợ</h2>
+          <ul>
+            <li><a href="#main">Liên hệ</a></li>
+            <li><a href="#main">Đổi trả</a></li>
+            <li><a href="#main">Chính sách</a></li>
+            <li><a href="#main">Điều khoản</a></li>
           </ul>
         </nav>
+        <div>
+          <h2>JBadminton</h2>
+          <p>
+            Đặt sân theo giờ tại Hà Nội và mua trang bị chính hãng — một nơi.
+          </p>
+          <p class="site-footer__phone">024 7109 4482 · 6:00–22:30</p>
+        </div>
       </div>
-
-      <div class="shell mt-10 pt-6 text-[12.5px]" style="border-top: 1px solid var(--line); color: var(--text-3)">
-        © {{ year }} JBadminton · Số 27 Trần Thái Tông, Cầu Giấy, Hà Nội
+      <div class="shell site-footer__legal">
+        <span>© {{ year }} JBadminton, Inc. All Rights Reserved</span>
+        <span>Số 27 Trần Thái Tông, Cầu Giấy, Hà Nội</span>
       </div>
     </footer>
 
@@ -632,15 +596,6 @@ onUnmounted(() => {
 
     <AnimatePresence>
       <BookingModal v-if="bookingCourt" :court="bookingCourt" @close="closeBooking" />
-      <ProductDetailModal
-        v-if="productDetail"
-        :product="productDetail"
-        :is-fav="productDetailIsFav"
-        @close="closeProductDetail"
-        @add-to-cart="onProductAddToCart"
-        @toggle-fav="onProductToggleFav"
-        @add-to-equipment="onProductAddToEquipment"
-      />
     </AnimatePresence>
   </div>
 </template>
