@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import { levelLabels } from '../../utils/labels'
+import { upload } from '../../utils/uploads'
 import { ATHLETES } from '../../data/athletes'
 
 const router = useRouter()
@@ -13,14 +14,14 @@ const TABS = [
 ]
 
 const MEMBERS = [
-  { rank: 1, name: 'Linh Vũ', level: 'platinum', hours: 86, bookings: 42, spend: '24.5tr', trend: 'up', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop' },
-  { rank: 2, name: 'Đức Phạm', level: 'gold', hours: 71, bookings: 38, spend: '18.2tr', trend: 'up', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
-  { rank: 3, name: 'Mai Trần', level: 'gold', hours: 64, bookings: 33, spend: '15.8tr', trend: 'same', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop' },
-  { rank: 4, name: 'Hùng Lê', level: 'silver', hours: 52, bookings: 29, spend: '11.4tr', trend: 'down', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop' },
-  { rank: 5, name: 'An Nguyễn', level: 'silver', hours: 47, bookings: 26, spend: '9.6tr', trend: 'up', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop' },
-  { rank: 6, name: 'Khoa Đỗ', level: 'silver', hours: 41, bookings: 22, spend: '8.1tr', trend: 'same', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop' },
-  { rank: 7, name: 'Vy Hoàng', level: 'bronze', hours: 33, bookings: 18, spend: '5.4tr', trend: 'up', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&h=200&fit=crop' },
-  { rank: 8, name: 'Nam Bùi', level: 'bronze', hours: 28, bookings: 15, spend: '4.2tr', trend: 'down', avatar: 'https://images.unsplash.com/photo-1566492031773-4f5e27234842?w=200&h=200&fit=crop' },
+  { rank: 1, name: 'Linh Vũ', level: 'platinum', hours: 86, bookings: 42, spend: '24.5tr', trend: 'up', avatar: upload(1) },
+  { rank: 2, name: 'Đức Phạm', level: 'gold', hours: 71, bookings: 38, spend: '18.2tr', trend: 'up', avatar: upload(2) },
+  { rank: 3, name: 'Mai Trần', level: 'gold', hours: 64, bookings: 33, spend: '15.8tr', trend: 'same', avatar: upload(3) },
+  { rank: 4, name: 'Hùng Lê', level: 'silver', hours: 52, bookings: 29, spend: '11.4tr', trend: 'down', avatar: upload(4) },
+  { rank: 5, name: 'An Nguyễn', level: 'silver', hours: 47, bookings: 26, spend: '9.6tr', trend: 'up', avatar: upload(5) },
+  { rank: 6, name: 'Khoa Đỗ', level: 'silver', hours: 41, bookings: 22, spend: '8.1tr', trend: 'same', avatar: upload(6) },
+  { rank: 7, name: 'Vy Hoàng', level: 'bronze', hours: 33, bookings: 18, spend: '5.4tr', trend: 'up', avatar: upload(7) },
+  { rank: 8, name: 'Nam Bùi', level: 'bronze', hours: 28, bookings: 15, spend: '4.2tr', trend: 'down', avatar: upload(8) },
 ]
 
 const tab = ref('athletes')

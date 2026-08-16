@@ -24,7 +24,7 @@ const emptyForm = () => ({
   rating: 4,
   phone: '',
   hours: '6:00 - 22:00',
-  image: 'photo-1626224583764-f87db24ac4ea',
+  image: 'https://jbam.id.vn/src/assets/uploads/background1.jpg',
   x: 50,
   y: 50,
 })
@@ -81,127 +81,118 @@ async function remove(id) {
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
+  <div class="admin-page">
+    <header class="admin-page__head admin-page__head--row">
       <div>
-        <h1 class="page-title">Quản lý sân</h1>
-        <p class="mt-1 text-sm" style="color: #64748b">
-          {{ courts.length }} sân trong hệ thống
-        </p>
+        <p class="eyebrow">Cơ sở</p>
+        <h1 class="page-title mt-2">Quản lý sân</h1>
+        <p class="lede mt-3">{{ courts.length }} sân trong hệ thống</p>
       </div>
-      <motion.button
-        type="button"
-        class="btn-primary rounded-xl px-5 py-2.5 text-sm w-full sm:w-auto"
-        :whileHover="{ scale: 1.02 }"
-        :whileTap="{ scale: 0.97 }"
-        @click="openAdd"
-      >
-        + Thêm sân
-      </motion.button>
-    </div>
+      <button type="button" class="btn-primary rounded-xl px-5 py-3 text-[14px] font-semibold" @click="openAdd">
+        Thêm sân
+      </button>
+    </header>
 
     <!-- Mobile cards -->
     <div class="md:hidden space-y-3">
-      <div v-if="loading" class="glass rounded-2xl p-6 text-center text-sm" style="color: #64748b">Đang tải...</div>
-      <motion.div
+      <div v-if="loading" class="surface p-8 text-center text-sm" style="color: var(--text-3)">Đang tải...</div>
+      <motion.article
         v-for="(court, i) in courts"
         :key="court.id"
-        class="glass rounded-2xl p-4"
+        class="surface p-4"
         :initial="{ opacity: 0, y: 10 }"
         :animate="{ opacity: 1, y: 0 }"
         :transition="{ delay: i * 0.04 }"
       >
         <div class="flex items-start justify-between gap-3 mb-3">
           <div class="min-w-0">
-            <div class="font-semibold text-sm leading-snug">{{ court.name }}</div>
-            <div class="text-xs mt-1" style="color: #64748b">{{ court.address }}</div>
+            <div class="font-semibold text-[15px] leading-snug">{{ court.name }}</div>
+            <div class="text-[12px] mt-1" style="color: var(--text-3)">{{ court.address }}</div>
           </div>
           <StatusPill :status="court.status" />
         </div>
-        <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-          <div class="rounded-xl p-2.5" style="background: rgba(255,255,255,0.03)">
-            <div style="color: #475569">Quận</div>
+        <div class="grid grid-cols-2 gap-2 text-[12px] mb-3">
+          <div class="rounded-xl p-2.5" style="background: var(--bg-2); border: 1px solid var(--line)">
+            <div style="color: var(--text-3)">Quận</div>
             <div class="mt-0.5 font-medium">{{ court.district }}</div>
           </div>
-          <div class="rounded-xl p-2.5" style="background: rgba(255,255,255,0.03)">
-            <div style="color: #475569">Giá/giờ</div>
-            <div class="mt-0.5 mono font-medium" style="color: #84cc16">{{ formatCurrency(court.price) }}</div>
+          <div class="rounded-xl p-2.5" style="background: var(--bg-2); border: 1px solid var(--line)">
+            <div style="color: var(--text-3)">Giá/giờ</div>
+            <div class="mt-0.5 mono font-medium">{{ formatCurrency(court.price) }}</div>
           </div>
-          <div class="rounded-xl p-2.5" style="background: rgba(255,255,255,0.03)">
-            <div style="color: #475569">Số sân</div>
+          <div class="rounded-xl p-2.5" style="background: var(--bg-2); border: 1px solid var(--line)">
+            <div style="color: var(--text-3)">Số sân</div>
             <div class="mt-0.5 mono font-medium">{{ court.courts }}</div>
           </div>
-          <div class="rounded-xl p-2.5" style="background: rgba(255,255,255,0.03)">
-            <div style="color: #475569">Giờ mở</div>
+          <div class="rounded-xl p-2.5" style="background: var(--bg-2); border: 1px solid var(--line)">
+            <div style="color: var(--text-3)">Giờ mở</div>
             <div class="mt-0.5 font-medium">{{ court.hours }}</div>
           </div>
         </div>
         <div class="flex gap-2">
-          <button type="button" class="btn-ghost flex-1 text-xs py-2.5 rounded-xl" @click="openEdit(court)">Sửa</button>
-          <button type="button" class="flex-1 text-xs py-2.5 rounded-xl" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2)" @click="remove(court.id)">Xóa</button>
+          <button type="button" class="btn-ghost flex-1 text-[12px] py-2.5 rounded-xl font-semibold" @click="openEdit(court)">Sửa</button>
+          <button
+            type="button"
+            class="flex-1 text-[12px] py-2.5 rounded-xl font-semibold"
+            style="background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.2)"
+            @click="remove(court.id)"
+          >
+            Xóa
+          </button>
         </div>
-      </motion.div>
+      </motion.article>
     </div>
 
     <!-- Desktop table -->
-    <div class="hidden md:block glass rounded-3xl overflow-hidden">
+    <div class="hidden md:block surface overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr style="color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06)">
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Sân</th>
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Quận</th>
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Giá/giờ</th>
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Số sân</th>
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Giờ mở</th>
-              <th class="text-left p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Trạng thái</th>
-              <th class="text-right p-4 font-semibold uppercase tracking-wider" style="font-size: 11px">Thao tác</th>
+            <tr style="color: var(--text-3); border-bottom: 1px solid var(--line)">
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Sân</th>
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Quận</th>
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Giá/giờ</th>
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Số sân</th>
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Giờ mở</th>
+              <th class="text-left p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Trạng thái</th>
+              <th class="text-right p-4 font-semibold text-[11px] uppercase tracking-[0.08em]">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="7" class="p-8 text-center" style="color: #64748b">Đang tải...</td>
+              <td colspan="7" class="p-8 text-center" style="color: var(--text-3)">Đang tải...</td>
             </tr>
-            <motion.tr
-              v-for="(court, i) in courts"
+            <tr
+              v-for="court in courts"
               :key="court.id"
-              class="table-row"
-              style="border-bottom: 1px solid rgba(255,255,255,0.04)"
-              :initial="{ opacity: 0, x: -12 }"
-              :animate="{ opacity: 1, x: 0 }"
-              :transition="{ delay: i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }"
+              class="admin-row"
+              style="border-bottom: 1px solid var(--line)"
             >
               <td class="p-4">
-                <div class="font-medium" style="color: var(--text)">{{ court.name }}</div>
-                <div class="text-xs mt-0.5 truncate max-w-[200px]" style="color: #64748b">{{ court.address }}</div>
+                <div class="font-semibold">{{ court.name }}</div>
+                <div class="text-[12px] mt-0.5 truncate max-w-[220px]" style="color: var(--text-3)">{{ court.address }}</div>
               </td>
-              <td class="p-4" style="color: #94a3b8">{{ court.district }}</td>
-              <td class="p-4 mono" style="color: #84cc16">{{ formatCurrency(court.price) }}</td>
-              <td class="p-4 mono" style="color: var(--text)">{{ court.courts }}</td>
-              <td class="p-4" style="color: #94a3b8">{{ court.hours }}</td>
+              <td class="p-4" style="color: var(--text-2)">{{ court.district }}</td>
+              <td class="p-4 mono font-medium">{{ formatCurrency(court.price) }}</td>
+              <td class="p-4 mono">{{ court.courts }}</td>
+              <td class="p-4" style="color: var(--text-2)">{{ court.hours }}</td>
               <td class="p-4"><StatusPill :status="court.status" /></td>
               <td class="p-4 text-right">
                 <div class="flex items-center justify-end gap-2">
-                  <motion.button
-                    type="button"
-                    class="btn-ghost text-xs py-1.5 px-3 rounded-lg"
-                    :whileTap="{ scale: 0.95 }"
-                    @click="openEdit(court)"
-                  >
+                  <button type="button" class="btn-ghost text-[12px] py-2 px-3 rounded-xl font-semibold" @click="openEdit(court)">
                     Sửa
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     type="button"
-                    class="btn-ghost text-xs py-1.5 px-3 rounded-lg"
+                    class="btn-ghost text-[12px] py-2 px-3 rounded-xl font-semibold"
                     style="color: #ef4444"
-                    :whileTap="{ scale: 0.95 }"
                     @click="remove(court.id)"
                   >
                     Xóa
-                  </motion.button>
+                  </button>
                 </div>
               </td>
-            </motion.tr>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -222,22 +213,12 @@ async function remove(id) {
           <FormField v-model="form.phone" label="Điện thoại" />
           <FormField v-model="form.hours" label="Giờ mở cửa" />
           <div class="flex gap-3 pt-2">
-            <motion.button
-              type="button"
-              class="btn-primary flex-1 rounded-xl py-2.5 text-sm"
-              :whileTap="{ scale: 0.97 }"
-              @click="save"
-            >
+            <button type="button" class="btn-primary flex-1 rounded-xl py-3 text-[14px] font-semibold" @click="save">
               Lưu
-            </motion.button>
-            <motion.button
-              type="button"
-              class="btn-ghost flex-1 rounded-xl py-2.5 text-sm"
-              :whileTap="{ scale: 0.97 }"
-              @click="showModal = false"
-            >
+            </button>
+            <button type="button" class="btn-ghost flex-1 rounded-xl py-3 text-[14px] font-semibold" @click="showModal = false">
               Hủy
-            </motion.button>
+            </button>
           </div>
         </div>
       </Modal>

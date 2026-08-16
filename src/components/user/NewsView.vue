@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { motion } from 'motion-v'
+import { upload } from '../../utils/uploads'
 
 const FILTERS = [
   { id: 'all', label: 'Tất cả' },
@@ -18,7 +19,7 @@ const NEWS = [
     excerpt: 'Hơn 200 suất cho hạng phong trào và bán chuyên. Đăng ký sớm giữ suất sân trung tâm Cầu Giấy.',
     date: '14.08.2026',
     read: '4 phút',
-    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&h=800&fit=crop',
+    image: upload(1),
     featured: true,
   },
   {
@@ -29,7 +30,7 @@ const NEWS = [
     excerpt: 'Nhóm 12 người, ưu tiên thành viên Gold. Mang vợt của bạn hoặc mượn tại quầy.',
     date: '12.08.2026',
     read: '2 phút',
-    image: 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=800&h=600&fit=crop',
+    image: upload(2),
   },
   {
     id: 'n3',
@@ -39,7 +40,7 @@ const NEWS = [
     excerpt: 'Ba màu khung, cân nặng 3U/4U. Đặt thử vợt 15 phút miễn phí khi mua kèm căng vợt.',
     date: '10.08.2026',
     read: '3 phút',
-    image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&h=600&fit=crop',
+    image: upload(3),
   },
   {
     id: 'n4',
@@ -49,7 +50,7 @@ const NEWS = [
     excerpt: 'Đôi nam nữ U35 lập kỷ lục điểm số nội bộ. Xem lại highlight trên trang xếp hạng.',
     date: '08.08.2026',
     read: '5 phút',
-    image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&h=600&fit=crop',
+    image: upload(4),
   },
   {
     id: 'n5',
@@ -59,7 +60,7 @@ const NEWS = [
     excerpt: 'Coach Linh hướng dẫn tư thế và nhịp chân. Suất tối thứ Sáu còn 6 chỗ.',
     date: '05.08.2026',
     read: '3 phút',
-    image: 'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=800&h=600&fit=crop',
+    image: upload(5),
   },
   {
     id: 'n6',
@@ -69,7 +70,7 @@ const NEWS = [
     excerpt: 'Đế non-marking, độ ôm gót và lưới thoáng — checklist nhanh trước khi xuống sân.',
     date: '01.08.2026',
     read: '4 phút',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=600&fit=crop',
+    image: upload(6),
   },
 ]
 

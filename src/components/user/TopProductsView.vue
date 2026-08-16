@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import Icon from '../common/Icon.vue'
 import { formatCurrency } from '../../utils/labels'
+import { upload } from '../../utils/uploads'
 
 const router = useRouter()
 const openProductDetail = inject('openProductDetail', null)
@@ -19,7 +20,7 @@ const TOP = [
     price: 3850000,
     sold: 1284,
     rating: 4.9,
-    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=600&h=600&fit=crop',
+    image: upload(1),
   },
   {
     rank: 2,
@@ -30,7 +31,7 @@ const TOP = [
     price: 2890000,
     sold: 1102,
     rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=600&fit=crop',
+    image: upload(2),
   },
   {
     rank: 3,
@@ -41,7 +42,7 @@ const TOP = [
     price: 3200000,
     sold: 956,
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=600&h=600&fit=crop',
+    image: upload(3),
   },
   {
     rank: 4,
@@ -52,7 +53,7 @@ const TOP = [
     price: 2750000,
     sold: 841,
     rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&h=600&fit=crop',
+    image: upload(4),
   },
   {
     rank: 5,
@@ -63,7 +64,7 @@ const TOP = [
     price: 420000,
     sold: 790,
     rating: 4.8,
-    image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=600&h=600&fit=crop',
+    image: upload(5),
   },
   {
     rank: 6,
@@ -74,7 +75,7 @@ const TOP = [
     price: 1650000,
     sold: 712,
     rating: 4.5,
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=600&fit=crop',
+    image: upload(6),
   },
   {
     rank: 7,
@@ -85,7 +86,7 @@ const TOP = [
     price: 220000,
     sold: 688,
     rating: 4.7,
-    image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba6851?w=600&h=600&fit=crop',
+    image: upload(7),
   },
   {
     rank: 8,
@@ -96,7 +97,7 @@ const TOP = [
     price: 590000,
     sold: 640,
     rating: 4.4,
-    image: 'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=600&h=600&fit=crop',
+    image: upload(8),
   },
   {
     rank: 9,
@@ -107,7 +108,7 @@ const TOP = [
     price: 85000,
     sold: 602,
     rating: 4.6,
-    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=600&fit=crop',
+    image: upload(9),
   },
   {
     rank: 10,
@@ -118,7 +119,7 @@ const TOP = [
     price: 1690000,
     sold: 558,
     rating: 4.3,
-    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=600&fit=crop',
+    image: upload(10),
   },
 ]
 
