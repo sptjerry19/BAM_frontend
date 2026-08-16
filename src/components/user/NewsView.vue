@@ -1,78 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { motion } from 'motion-v'
-import { upload } from '../../utils/uploads'
-
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'tournament', label: 'Giải đấu' },
-  { id: 'club', label: 'Câu lạc bộ' },
-  { id: 'gear', label: 'Trang bị' },
-]
-
-const NEWS = [
-  {
-    id: 'n1',
-    category: 'tournament',
-    tag: 'Giải đấu',
-    title: 'JBadminton Open 2026 mở đăng ký từ tuần này',
-    excerpt: 'Hơn 200 suất cho hạng phong trào và bán chuyên. Đăng ký sớm giữ suất sân trung tâm Cầu Giấy.',
-    date: '14.08.2026',
-    read: '4 phút',
-    image: upload(1),
-    featured: true,
-  },
-  {
-    id: 'n2',
-    category: 'club',
-    tag: 'CLB',
-    title: 'Lịch tối thứ Ba: sparring cấp độ trung cấp',
-    excerpt: 'Nhóm 12 người, ưu tiên thành viên Gold. Mang vợt của bạn hoặc mượn tại quầy.',
-    date: '12.08.2026',
-    read: '2 phút',
-    image: upload(2),
-  },
-  {
-    id: 'n3',
-    category: 'gear',
-    tag: 'Trang bị',
-    title: 'Astrox thế hệ mới đã có tại cửa hàng',
-    excerpt: 'Ba màu khung, cân nặng 3U/4U. Đặt thử vợt 15 phút miễn phí khi mua kèm căng vợt.',
-    date: '10.08.2026',
-    read: '3 phút',
-    image: upload(3),
-  },
-  {
-    id: 'n4',
-    category: 'tournament',
-    tag: 'Giải đấu',
-    title: 'Kết quả vòng loại miền Bắc — điểm nổi bật',
-    excerpt: 'Đôi nam nữ U35 lập kỷ lục điểm số nội bộ. Xem lại highlight trên trang xếp hạng.',
-    date: '08.08.2026',
-    read: '5 phút',
-    image: upload(4),
-  },
-  {
-    id: 'n5',
-    category: 'club',
-    tag: 'CLB',
-    title: 'Workshop kỹ thuật smash cho người mới',
-    excerpt: 'Coach Linh hướng dẫn tư thế và nhịp chân. Suất tối thứ Sáu còn 6 chỗ.',
-    date: '05.08.2026',
-    read: '3 phút',
-    image: upload(5),
-  },
-  {
-    id: 'n6',
-    category: 'gear',
-    tag: 'Trang bị',
-    title: 'Cách chọn giày sân trong nhà mùa ẩm',
-    excerpt: 'Đế non-marking, độ ôm gót và lưới thoáng — checklist nhanh trước khi xuống sân.',
-    date: '01.08.2026',
-    read: '4 phút',
-    image: upload(6),
-  },
-]
+import { NEWS, NEWS_FILTERS } from '../../data/news'
 
 const filter = ref('all')
 
@@ -93,7 +23,7 @@ const list = computed(() =>
 
     <div class="flex flex-wrap gap-2 mt-8" role="tablist" aria-label="Lọc tin">
       <button
-        v-for="f in FILTERS"
+        v-for="f in NEWS_FILTERS"
         :key="f.id"
         type="button"
         role="tab"
@@ -117,6 +47,11 @@ const list = computed(() =>
       :initial="{ opacity: 0, y: 18 }"
       :animate="{ opacity: 1, y: 0 }"
     >
+      <RouterLink
+        :to="{ name: 'news-detail', params: { id: featured.id } }"
+        class="absolute inset-0 z-[1]"
+        :aria-label="`Đọc bài: ${featured.title}`"
+      />
       <img
         :src="featured.image"
         :alt="featured.title"
@@ -126,45 +61,49 @@ const list = computed(() =>
         class="absolute inset-0"
         style="background: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.78) 100%)"
       />
-      <div class="relative z-10 p-6 sm:p-10 max-w-2xl text-white">
+      <div class="relative z-10 p-6 sm:p-10 max-w-2xl text-white pointer-events-none">
         <p class="text-[11px] uppercase tracking-[0.14em] opacity-80">{{ featured.tag }} · {{ featured.date }}</p>
         <h2 class="font-heading font-bold text-[28px] sm:text-[40px] leading-[1.05] mt-3">
           {{ featured.title }}
         </h2>
         <p class="mt-3 text-[15px] leading-relaxed opacity-90 max-w-xl">{{ featured.excerpt }}</p>
-        <button type="button" class="btn-primary mt-6 px-6 py-3 rounded-full text-[14px]">
+        <span class="btn-primary mt-6 px-6 py-3 rounded-full text-[14px] inline-flex pointer-events-none">
           Đọc bài
-        </button>
+        </span>
       </div>
     </motion.article>
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
-      <motion.article
+      <RouterLink
         v-for="(item, i) in list"
         :key="item.id"
-        class="group cursor-pointer"
-        :initial="{ opacity: 0, y: 16 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :transition="{ delay: Math.min(i, 6) * 0.05 }"
+        :to="{ name: 'news-detail', params: { id: item.id } }"
+        class="group block"
       >
-        <div class="overflow-hidden aspect-[16/10]" style="border-radius: var(--r-md)">
-          <img
-            :src="item.image"
-            :alt="item.title"
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            loading="lazy"
-          />
-        </div>
-        <p class="mt-4 text-[11px] uppercase tracking-[0.12em]" style="color: var(--text-3)">
-          {{ item.tag }} · {{ item.date }} · {{ item.read }}
-        </p>
-        <h3 class="font-heading font-bold text-[18px] leading-snug mt-2 group-hover:underline underline-offset-4">
-          {{ item.title }}
-        </h3>
-        <p class="mt-2 text-[14px] leading-relaxed line-clamp-2" style="color: var(--text-2)">
-          {{ item.excerpt }}
-        </p>
-      </motion.article>
+        <motion.article
+          :initial="{ opacity: 0, y: 16 }"
+          :animate="{ opacity: 1, y: 0 }"
+          :transition="{ delay: Math.min(i, 6) * 0.05 }"
+        >
+          <div class="overflow-hidden aspect-[16/10]" style="border-radius: var(--r-md)">
+            <img
+              :src="item.image"
+              :alt="item.title"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              loading="lazy"
+            />
+          </div>
+          <p class="mt-4 text-[11px] uppercase tracking-[0.12em]" style="color: var(--text-3)">
+            {{ item.tag }} · {{ item.date }} · {{ item.read }}
+          </p>
+          <h3 class="font-heading font-bold text-[18px] leading-snug mt-2 group-hover:underline underline-offset-4">
+            {{ item.title }}
+          </h3>
+          <p class="mt-2 text-[14px] leading-relaxed line-clamp-2" style="color: var(--text-2)">
+            {{ item.excerpt }}
+          </p>
+        </motion.article>
+      </RouterLink>
     </div>
 
     <p v-if="list.length === 0" class="mt-16 text-center" style="color: var(--text-3)">
