@@ -62,8 +62,10 @@ jobs:
             git remote -v
             git fetch origin
             DEFAULT_BRANCH="$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')"
-            git checkout "$DEFAULT_BRANCH"
+            # Discard local EC2 edits (e.g. SSL scripts) so deploy always matches GitHub
+            git checkout -f -B "$DEFAULT_BRANCH" "origin/${DEFAULT_BRANCH}"
             git reset --hard "origin/${DEFAULT_BRANCH}"
+            git clean -fd
 
             echo "==> Build & restart (HTTPS stack)"
             sudo docker compose up -d --build --remove-orphans
