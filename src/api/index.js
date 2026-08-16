@@ -1,6 +1,6 @@
 import api from './client'
 
-const AUTH = '/auth'
+const AUTH = ''
 
 export const login = (data) => api.post(`${AUTH}/login`, data).then((r) => r.data)
 export const register = (data) => api.post(`${AUTH}/register`, data).then((r) => r.data)
@@ -22,10 +22,33 @@ export const deleteCourt = (id) => api.delete(`${AUTH}/courts/${id}`)
 export const getProducts = (category, params = {}) =>
   api
     .get(`${AUTH}/products`, { params: { ...params, ...(category ? { category } : {}) } })
-    .then((r) => r.data)
-export const createProduct = (data) => api.post(`${AUTH}/products`, data).then((r) => r.data)
-export const updateProduct = (id, data) => api.put(`${AUTH}/products/${id}`, data).then((r) => r.data)
+    .then((r) => ({
+      data: Array.isArray(r.data) ? r.data : [],
+      pagination: r.api?.meta?.pagination ?? null,
+    }))
+export const getBestsellers = () =>
+  api.get(`${AUTH}/products/bestsellers`).then((r) => (Array.isArray(r.data) ? r.data : []))
+export const createProduct = (data) => {
+  if (data instanceof FormData) {
+    return api.post(`${AUTH}/products`, data).then((r) => r.data)
+  }
+  return api.post(`${AUTH}/products`, data).then((r) => r.data)
+}
+export const updateProduct = (id, data) => {
+  if (data instanceof FormData) {
+    data.append('_method', 'PUT')
+    return api.post(`${AUTH}/products/${id}`, data).then((r) => r.data)
+  }
+  return api.put(`${AUTH}/products/${id}`, data).then((r) => r.data)
+}
 export const deleteProduct = (id) => api.delete(`${AUTH}/products/${id}`)
+
+export const uploadFiles = (files, folder = 'uploads') => {
+  const fd = new FormData()
+  fd.append('folder', folder)
+  ;[...files].forEach((file) => fd.append('files[]', file))
+  return api.post(`${AUTH}/uploads`, fd).then((r) => r.data)
+}
 
 export const getMembers = (search, level, params = {}) =>
   api.get(`${AUTH}/members`, { params: { search, level, ...params } }).then((r) => r.data)

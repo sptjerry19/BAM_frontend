@@ -1,48 +1,66 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, provide, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
 import { getMember, attachMemberEquipment, detachMemberEquipment } from '../../api'
-import { levelColors } from '../../utils/labels'
-import MapView from './MapView.vue'
-import ProfileView from './ProfileView.vue'
-import EquipmentView from './EquipmentView.vue'
-import ShopView from './ShopView.vue'
-import CartView from './CartView.vue'
-import FavoritesView from './FavoritesView.vue'
+import { levelColors, levelLabels } from '../../utils/labels'
+import { useAuth } from '../../composables/useAuth'
+import Icon from '../common/Icon.vue'
+import ThemeToggle from '../common/ThemeToggle.vue'
 import BookingModal from './BookingModal.vue'
-import ProductDetailModal from './ProductDetailModal.vue'
 
-const props = defineProps({
-  authUser: { type: Object, default: null },
-})
+const CART_KEY = 'jb_cart'
+const FAV_KEY = 'jb_favorites'
 
-const emit = defineEmits(['logout'])
+function readJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
 
-const page = ref('map')
+const route = useRoute()
+const router = useRouter()
+const { user: authUser, isAuthenticated, logout } = useAuth()
+
 const user = ref(null)
-const cart = ref([])
-const favorites = ref(['p1', 'p3'])
+const cart = ref(readJson(CART_KEY, []))
+const favorites = ref(readJson(FAV_KEY, []))
 const bookingCourt = ref(null)
-const productDetail = ref(null)
 const menuOpen = ref(false)
-const isMobile = ref(false)
+const accountOpen = ref(false)
 
-const navItems = [
-  { id: 'map', label: 'Bản đồ sân', short: 'Bản đồ', icon: '◎', color: '#6366f1' },
-  { id: 'shop', label: 'Cửa hàng', short: 'Shop', icon: '◈', color: '#ec4899' },
-  { id: 'cart', label: 'Giỏ hàng', short: 'Giỏ', icon: '⬡', color: '#06b6d4' },
-  { id: 'profile', label: 'Hồ sơ', short: 'Hồ sơ', icon: '◉', color: '#84cc16' },
-  { id: 'equipment', label: 'Trang bị', short: 'Trang bị', icon: '⊞', color: '#f59e0b' },
-  { id: 'favorites', label: 'Yêu thích', short: 'Thích', icon: '♡', color: '#ef4444' },
+const publicNavItems = [
+  { name: 'home', label: 'Trang chủ', icon: 'home' },
+  { name: 'courts', label: 'Đặt sân', icon: 'court' },
+  { name: 'shop', label: 'Cửa hàng', icon: 'shuttlecock' },
+  { name: 'favorites', label: 'Yêu thích', icon: 'heart' },
 ]
 
-const bottomNavIds = ['map', 'shop', 'cart', 'profile', 'equipment', 'favorites']
+const accountNavItems = [
+  { name: 'equipment', label: 'Trang bị', icon: 'racket' },
+  { name: 'profile', label: 'Hồ sơ', icon: 'user' },
+]
+
+const navItems = computed(() =>
+  isAuthenticated.value ? [...publicNavItems, ...accountNavItems] : publicNavItems,
+)
+
+const bottomNavItems = computed(() => [
+  { name: 'home', label: 'Trang chủ', icon: 'home' },
+  { name: 'courts', label: 'Đặt sân', icon: 'court' },
+  { name: 'shop', label: 'Cửa hàng', icon: 'shuttlecock' },
+  { name: 'cart', label: 'Giỏ hàng', icon: 'bag' },
+  ...(isAuthenticated.value
+    ? [{ name: 'profile', label: 'Hồ sơ', icon: 'user' }]
+    : [{ name: 'favorites', label: 'Yêu thích', icon: 'heart' }]),
+])
+
+const year = new Date().getFullYear()
 
 const cartCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0))
-const currentNav = computed(() => navItems.find((i) => i.id === page.value) || navItems[0])
-const productDetailIsFav = computed(() =>
-  productDetail.value ? favorites.value.includes(productDetail.value.id) : false,
-)
 
 function addToCart(productId) {
   const existing = cart.value.find((i) => i.productId === productId)
@@ -65,7 +83,18 @@ function removeFavorite(id) {
   if (idx >= 0) favorites.value.splice(idx, 1)
 }
 
+/** Send guests to login; return true when the action may proceed. */
+function requireAuth(redirectTo = route.fullPath) {
+  if (isAuthenticated.value) return true
+  router.push({
+    name: 'login',
+    query: redirectTo ? { redirect: redirectTo } : {},
+  })
+  return false
+}
+
 async function addToEquipment(productId) {
+  if (!requireAuth(route.fullPath)) return
   if (!user.value?.id || !productId) return
   const equipment = user.value.equipment || []
   if (equipment.includes(productId)) return
@@ -78,6 +107,7 @@ async function addToEquipment(productId) {
 }
 
 async function removeFromEquipment(productId) {
+  if (!requireAuth(route.fullPath)) return
   if (!user.value?.id || !productId) return
   const equipment = (user.value.equipment || []).filter((id) => id !== productId)
   try {
@@ -86,6 +116,20 @@ async function removeFromEquipment(productId) {
   } catch {
     user.value = { ...user.value, equipment }
   }
+}
+
+function openBooking(court) {
+  if (!requireAuth(`/courts`)) return
+  bookingCourt.value = court
+}
+
+function closeBooking() {
+  bookingCourt.value = null
+}
+
+function openProductDetail(p) {
+  if (!p?.id) return
+  router.push({ name: 'product-detail', params: { id: String(p.id) } })
 }
 
 provide('user', user)
@@ -97,65 +141,30 @@ provide('toggleFavorite', toggleFavorite)
 provide('removeFavorite', removeFavorite)
 provide('addToEquipment', addToEquipment)
 provide('removeFromEquipment', removeFromEquipment)
-provide('openProductDetail', (p) => { productDetail.value = p })
-provide('goToShop', () => { page.value = 'shop' })
+provide('openProductDetail', openProductDetail)
+provide('openBooking', openBooking)
+provide('requireAuth', requireAuth)
+provide('goToShop', () => router.push({ name: 'shop' }))
 
-function openProductDetail(p) {
-  productDetail.value = p
-}
-
-function closeProductDetail() {
-  productDetail.value = null
-}
-
-function onProductAddToCart() {
-  if (productDetail.value) addToCart(productDetail.value.id)
-}
-
-function onProductToggleFav() {
-  if (productDetail.value) toggleFavorite(productDetail.value.id)
-}
-
-async function onProductAddToEquipment(productId) {
-  await addToEquipment(productId)
-}
-
-function checkMobile() {
-  isMobile.value = window.matchMedia('(max-width: 767px)').matches
-  if (!isMobile.value) menuOpen.value = false
-}
-
-function selectPage(id) {
-  page.value = id
-  menuOpen.value = false
-}
-
-function onBottomNav(id) {
-  selectPage(id)
-}
-
-function badgeCount(item) {
-  if (item.id === 'cart' && cartCount.value > 0) return cartCount.value
-  if (item.id === 'favorites' && favorites.value.length > 0) return favorites.value.length
+function badgeCount(name) {
+  if (name === 'cart') return cartCount.value
+  if (name === 'favorites') return favorites.value.length
   return 0
 }
 
-function onBook(court) {
-  bookingCourt.value = court
+async function onLogout() {
+  menuOpen.value = false
+  accountOpen.value = false
+  await logout()
+  user.value = null
+  router.push({ name: 'home' })
 }
 
-function closeBooking() {
-  bookingCourt.value = null
-}
+async function loadMember() {
+  user.value = null
+  if (!isAuthenticated.value || !authUser.value) return
 
-watch(menuOpen, (open) => {
-  document.body.style.overflow = open ? 'hidden' : ''
-})
-
-onMounted(async () => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-  const memberId = props.authUser?.member_id || props.authUser?.member?.id
+  const memberId = authUser.value.member_id || authUser.value.member?.id
   if (memberId) {
     try {
       user.value = await getMember(memberId)
@@ -164,14 +173,14 @@ onMounted(async () => {
       /* fallback below */
     }
   }
-  if (props.authUser?.member) {
-    user.value = props.authUser.member
-  } else if (props.authUser) {
+  if (authUser.value.member) {
+    user.value = authUser.value.member
+  } else {
     user.value = {
-      id: props.authUser.member_id || `u_${props.authUser.id}`,
-      name: props.authUser.name,
-      email: props.authUser.email,
-      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(props.authUser.email || props.authUser.name)}`,
+      id: authUser.value.member_id || `u_${authUser.value.id}`,
+      name: authUser.value.name,
+      email: authUser.value.email,
+      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(authUser.value.email || authUser.value.name)}`,
       level: 'beginner',
       points: 0,
       matches: 0,
@@ -181,106 +190,239 @@ onMounted(async () => {
       status: 'active',
     }
   }
+}
+
+function onWindowClick(e) {
+  if (!accountOpen.value) return
+  if (!e.target.closest?.('[data-account-menu]')) accountOpen.value = false
+}
+
+function onEscape(e) {
+  if (e.key !== 'Escape') return
+  menuOpen.value = false
+  accountOpen.value = false
+}
+
+watch(
+  cart,
+  (items) => {
+    localStorage.setItem(CART_KEY, JSON.stringify(items))
+  },
+  { deep: true },
+)
+
+watch(
+  favorites,
+  (items) => {
+    localStorage.setItem(FAV_KEY, JSON.stringify(items))
+  },
+  { deep: true },
+)
+
+watch(menuOpen, (open) => {
+  document.body.classList.toggle('is-locked', open)
+})
+
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false
+    accountOpen.value = false
+  },
+)
+
+watch(isAuthenticated, () => {
+  loadMember()
+})
+
+onMounted(() => {
+  window.addEventListener('click', onWindowClick)
+  window.addEventListener('keydown', onEscape)
+  loadMember()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-  document.body.style.overflow = ''
+  window.removeEventListener('click', onWindowClick)
+  window.removeEventListener('keydown', onEscape)
+  document.body.classList.remove('is-locked')
 })
 </script>
 
 <template>
-  <div class="flex h-[100dvh] overflow-hidden" style="background: #070b14">
-    <!-- Desktop sidebar -->
-    <motion.aside
-      class="hidden md:flex w-64 flex-shrink-0 flex-col"
-      style="border-right: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02)"
-      :initial="{ x: -80, opacity: 0 }"
-      :animate="{ x: 0, opacity: 1 }"
-      :transition="{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }"
-    >
-      <div class="px-5 py-5" style="border-bottom: 1px solid rgba(255,255,255,0.06)">
-        <div v-if="user" class="flex items-center gap-3">
-          <div class="relative">
-            <img
-              :src="user.avatar"
-              :alt="user.name"
-              class="w-10 h-10 rounded-2xl object-cover"
-              :style="{ border: `2px solid ${levelColors[user.level]}40` }"
-            />
-            <div
-              class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-              style="border-color: #070b14; background: #84cc16"
-            />
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-heading font-bold text-sm truncate">{{ user.name }}</div>
-            <div class="mono text-xs" style="color: #84cc16; margin-top: 1px">
-              {{ user.points.toLocaleString() }} pts
-            </div>
-          </div>
-        </div>
-        <div v-else class="h-10 shimmer rounded-2xl" />
-      </div>
+  <div class="min-h-[100dvh]" style="background: var(--bg)">
+    <a class="skip-link" href="#main">Bỏ qua tới nội dung</a>
 
-      <nav class="flex-1 p-3 space-y-1 pt-4 overflow-y-auto">
-        <motion.button
-          v-for="item in navItems"
-          :key="item.id"
-          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left relative overflow-hidden"
-          :style="page !== item.id ? { color: '#64748b' } : {}"
-          :whileHover="page !== item.id ? { color: '#94a3b8', background: 'rgba(255,255,255,0.04)' } : {}"
-          :whileTap="{ scale: 0.97 }"
-          @click="selectPage(item.id)"
+    <div class="pre-nav" aria-label="Liên kết phụ">
+      <div class="shell pre-nav__inner">
+        <a href="#main">Tìm sân</a>
+        <a href="#main">Hỗ trợ</a>
+        <RouterLink
+          v-if="!isAuthenticated"
+          :to="{ name: 'login', query: { redirect: route.fullPath } }"
         >
-          <motion.div
-            v-if="page === item.id"
-            layout-id="user-nav"
-            class="absolute inset-0 rounded-xl"
-            :style="{
-              background: `linear-gradient(90deg, ${item.color}15, ${item.color}06)`,
-              borderLeft: `2px solid ${item.color}`,
-            }"
-            :transition="{ type: 'spring', stiffness: 400, damping: 30 }"
-          />
-          <span class="relative text-base">{{ item.icon }}</span>
-          <span
-            class="relative flex-1 text-sm font-medium"
-            :style="page === item.id ? { color: item.color } : {}"
+          Đăng nhập
+        </RouterLink>
+        <RouterLink v-else :to="{ name: 'profile' }">Tài khoản</RouterLink>
+        <ThemeToggle />
+      </div>
+    </div>
+
+    <header class="top-nav">
+      <div class="shell flex items-center gap-5 h-[60px] md:h-[64px]">
+        <button
+          type="button"
+          class="icon-btn md:hidden border-0 bg-transparent"
+          aria-label="Mở menu"
+          @click.stop="menuOpen = true"
+        >
+          <Icon name="menu" :size="22" />
+        </button>
+
+        <RouterLink
+          :to="{ name: 'home' }"
+          class="shrink-0"
+          aria-label="Về trang chủ JBadminton"
+        >
+          <span class="font-heading text-[22px] md:text-[24px] font-bold tracking-tight">
+            JBadminton
+          </span>
+        </RouterLink>
+
+        <nav class="hidden md:flex items-center gap-8 ml-8" aria-label="Điều hướng chính">
+          <RouterLink
+            v-for="item in navItems.filter((n) => n.name !== 'home')"
+            :key="item.name"
+            :to="{ name: item.name }"
+            class="nav-link"
           >
             {{ item.label }}
-          </span>
+            <span
+              v-if="badgeCount(item.name) > 0"
+              class="mono text-[10px] px-1.5 py-px rounded"
+              style="background: var(--accent-soft); color: var(--text)"
+            >
+              {{ badgeCount(item.name) }}
+            </span>
+          </RouterLink>
+        </nav>
+
+        <div class="flex-1" />
+
+        <div class="md:hidden">
+          <ThemeToggle />
+        </div>
+
+        <RouterLink
+          :to="{ name: 'favorites' }"
+          class="icon-btn border-0 bg-transparent"
+          :aria-label="`Yêu thích, ${favorites.length} mục`"
+        >
+          <Icon name="heart" :size="20" />
+          <span v-if="favorites.length" class="count-badge">{{ favorites.length }}</span>
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'cart' }"
+          class="icon-btn border-0 bg-transparent"
+          :aria-label="`Giỏ hàng, ${cartCount} sản phẩm`"
+        >
+          <Icon name="bag" :size="20" />
           <motion.span
-            v-if="badgeCount(item) > 0"
-            class="relative w-5 h-5 rounded-full flex items-center justify-center mono text-xs font-bold"
-            :style="{ background: item.color, color: '#0a1200' }"
+            v-if="cartCount > 0"
+            class="count-badge"
             :initial="{ scale: 0 }"
             :animate="{ scale: 1 }"
-            :transition="{ type: 'spring', stiffness: 400, damping: 20 }"
+            :transition="{ type: 'spring', stiffness: 420, damping: 22 }"
           >
-            {{ badgeCount(item) }}
+            {{ cartCount }}
           </motion.span>
-        </motion.button>
-      </nav>
+        </RouterLink>
 
-      <div class="p-3" style="border-top: 1px solid rgba(255,255,255,0.06)">
-        <motion.button
-          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl btn-ghost text-sm"
-          :whileHover="{ scale: 1.02 }"
-          :whileTap="{ scale: 0.97 }"
-          @click="emit('logout')"
-        >
-          <span style="font-size: 16px">⎋</span> Đăng xuất
-        </motion.button>
+        <div v-if="isAuthenticated" class="relative hidden md:block" data-account-menu>
+          <button
+            type="button"
+            class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full transition-opacity hover:opacity-70"
+            :aria-expanded="accountOpen"
+            aria-haspopup="menu"
+            @click="accountOpen = !accountOpen"
+          >
+            <img
+              v-if="user"
+              :src="user.avatar"
+              :alt="`Ảnh đại diện của ${user.name}`"
+              class="w-8 h-8 rounded-full object-cover"
+            />
+            <span v-else class="w-8 h-8 rounded-full skeleton" />
+            <Icon name="chevronDown" :size="15" />
+          </button>
+
+          <AnimatePresence>
+            <motion.div
+              v-if="accountOpen"
+              role="menu"
+              class="absolute right-0 mt-2 w-60 p-2 glass-strong"
+              style="border-radius: var(--r-md); z-index: var(--z-nav); border: 1px solid var(--line)"
+              :initial="{ opacity: 0, y: -6, scale: 0.97 }"
+              :animate="{ opacity: 1, y: 0, scale: 1 }"
+              :exit="{ opacity: 0, y: -6, scale: 0.97 }"
+              :transition="{ duration: 0.18 }"
+            >
+              <div v-if="user" class="px-3 py-2.5 mb-1" style="border-bottom: 1px solid var(--line)">
+                <div class="text-[13px] font-semibold truncate">{{ user.name }}</div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="mono text-[11px]" style="color: var(--text-2)">
+                    {{ user.points.toLocaleString('vi-VN') }} điểm
+                  </span>
+                  <span style="color: var(--text-3)">·</span>
+                  <span class="text-[11px]" style="color: var(--text-3)">{{ levelLabels[user.level] }}</span>
+                </div>
+              </div>
+              <RouterLink
+                :to="{ name: 'profile' }"
+                role="menuitem"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
+              >
+                <Icon name="user" :size="17" />
+                Hồ sơ của tôi
+              </RouterLink>
+              <RouterLink
+                :to="{ name: 'equipment' }"
+                role="menuitem"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
+              >
+                <Icon name="racket" :size="17" />
+                Trang bị
+              </RouterLink>
+              <RouterLink
+                :to="{ name: 'favorites' }"
+                role="menuitem"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
+              >
+                <Icon name="heart" :size="17" />
+                Yêu thích
+              </RouterLink>
+              <button
+                type="button"
+                role="menuitem"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] text-left transition-colors hover:bg-[var(--accent-soft)]"
+                style="color: #ef4444"
+                @click="onLogout"
+              >
+                <Icon name="logout" :size="17" />
+                Đăng xuất
+              </button>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
-    </motion.aside>
+    </header>
 
-    <!-- Mobile full menu drawer -->
     <AnimatePresence>
       <motion.div
         v-if="menuOpen"
         key="user-backdrop"
-        class="fixed inset-0 z-40 md:hidden modal-backdrop"
+        class="fixed inset-0 md:hidden modal-backdrop"
+        style="z-index: var(--z-drawer)"
         :initial="{ opacity: 0 }"
         :animate="{ opacity: 1 }"
         :exit="{ opacity: 0 }"
@@ -289,190 +431,171 @@ onUnmounted(() => {
       <motion.aside
         v-if="menuOpen"
         key="user-drawer"
-        class="fixed inset-y-0 left-0 z-50 w-[min(300px,88vw)] flex flex-col md:hidden"
-        style="background: #0a101c; border-right: 1px solid rgba(255,255,255,0.08); box-shadow: 20px 0 60px rgba(0,0,0,0.45)"
-        :initial="{ x: '-100%' }"
+        class="fixed inset-y-0 right-0 w-[min(320px,90vw)] flex flex-col md:hidden"
+        style="z-index: var(--z-drawer); background: var(--bg-1); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg)"
+        :initial="{ x: '100%' }"
         :animate="{ x: 0 }"
-        :exit="{ x: '-100%' }"
+        :exit="{ x: '100%' }"
         :transition="{ type: 'spring', stiffness: 380, damping: 36 }"
       >
-        <div class="p-5 flex items-start justify-between gap-3" style="border-bottom: 1px solid rgba(255,255,255,0.06)">
+        <div class="p-5 flex items-start justify-between gap-3" style="border-bottom: 1px solid var(--line)">
           <div v-if="user" class="flex items-center gap-3 min-w-0">
             <img
               :src="user.avatar"
-              :alt="user.name"
+              :alt="`Ảnh đại diện của ${user.name}`"
               class="w-12 h-12 rounded-2xl object-cover shrink-0"
-              :style="{ border: `2px solid ${levelColors[user.level]}40` }"
+              :style="{ border: `2px solid ${levelColors[user.level]}55` }"
             />
             <div class="min-w-0">
               <div class="font-heading font-bold text-sm truncate">{{ user.name }}</div>
-              <div class="mono text-xs" style="color: #84cc16">{{ user.points.toLocaleString() }} pts</div>
+              <div class="mono text-xs" style="color: var(--accent)">
+                {{ user.points.toLocaleString('vi-VN') }} điểm
+              </div>
             </div>
+          </div>
+          <div v-else class="min-w-0">
+            <div class="font-heading font-bold text-sm">Chào bạn</div>
+            <div class="text-xs mt-1" style="color: var(--text-3)">Đăng nhập để đặt sân và mua hàng</div>
           </div>
           <button
             type="button"
-            class="btn-ghost w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            class="icon-btn shrink-0"
             aria-label="Đóng menu"
             @click="menuOpen = false"
           >
-            ✕
+            <Icon name="close" :size="18" />
           </button>
         </div>
 
-        <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-          <button
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Điều hướng di động">
+          <RouterLink
             v-for="item in navItems"
-            :key="item.id"
-            type="button"
-            class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left"
-            :style="{
-              color: page === item.id ? item.color : '#94a3b8',
-              background: page === item.id ? `${item.color}12` : 'transparent',
-              borderLeft: page === item.id ? `2px solid ${item.color}` : '2px solid transparent',
-            }"
-            @click="selectPage(item.id)"
+            :key="item.name"
+            :to="{ name: item.name }"
+            class="drawer-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl"
           >
-            <span class="text-base w-5 text-center">{{ item.icon }}</span>
-            <span class="flex-1 text-sm font-medium">{{ item.label }}</span>
-            <span
-              v-if="badgeCount(item) > 0"
-              class="w-5 h-5 rounded-full flex items-center justify-center mono text-xs font-bold"
-              :style="{ background: item.color, color: '#0a1200' }"
-            >
-              {{ badgeCount(item) }}
-            </span>
-          </button>
+            <Icon :name="item.icon" :size="19" />
+            <span class="flex-1 text-sm">{{ item.label }}</span>
+            <span v-if="badgeCount(item.name) > 0" class="mono text-xs">{{ badgeCount(item.name) }}</span>
+          </RouterLink>
         </nav>
 
-        <div class="p-3 pb-[max(12px,env(safe-area-inset-bottom))]" style="border-top: 1px solid rgba(255,255,255,0.06)">
+        <div class="p-3 pb-[max(12px,env(safe-area-inset-bottom))]" style="border-top: 1px solid var(--line)">
           <button
+            v-if="isAuthenticated"
             type="button"
-            class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl btn-ghost text-sm"
-            @click="emit('logout'); menuOpen = false"
+            class="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-2xl btn-ghost text-sm"
+            @click="onLogout"
           >
-            <span>⎋</span>
-            <span>Đăng xuất</span>
+            <Icon name="logout" :size="17" />
+            Đăng xuất
           </button>
+          <RouterLink
+            v-else
+            :to="{ name: 'login', query: { redirect: route.fullPath } }"
+            class="btn-primary w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-2xl text-sm"
+            @click="menuOpen = false"
+          >
+            Đăng nhập
+          </RouterLink>
         </div>
       </motion.aside>
     </AnimatePresence>
 
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <!-- Mobile top bar -->
-      <header
-        class="md:hidden flex items-center gap-3 px-4 py-3 shrink-0"
-        style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(7,11,20,0.92); backdrop-filter: blur(12px); padding-top: max(12px, env(safe-area-inset-top))"
-      >
-        <motion.button
-          type="button"
-          class="w-11 h-11 rounded-xl btn-ghost flex flex-col items-center justify-center gap-[5px]"
-          aria-label="Mở menu"
-          :whileTap="{ scale: 0.94 }"
-          @click="menuOpen = true"
-        >
-          <span class="block w-5 h-0.5 rounded-full bg-current" />
-          <span class="block w-5 h-0.5 rounded-full bg-current" />
-          <span class="block w-4 h-0.5 rounded-full bg-current self-start ml-[11px]" />
-        </motion.button>
-        <div class="flex-1 min-w-0">
-          <div class="text-sm font-heading font-bold truncate" :style="{ color: currentNav.color }">
-            {{ currentNav.label }}
-          </div>
-          <div v-if="user" class="text-[11px] truncate" style="color: #64748b">
-            {{ user.name }} · {{ user.points.toLocaleString() }} pts
-          </div>
-        </div>
-        <button
-          type="button"
-          class="relative w-11 h-11 rounded-xl btn-ghost flex items-center justify-center"
-          @click="selectPage('cart')"
-        >
-          ⬡
-          <span
-            v-if="cartCount > 0"
-            class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-            style="background: #06b6d4; color: #0a1200"
-          >
-            {{ cartCount }}
-          </span>
-        </button>
-      </header>
-
-      <main
-        class="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8"
-        :class="isMobile ? 'pb-24' : 'pb-[max(16px,env(safe-area-inset-bottom))]'"
-      >
+    <main id="main" class="pb-28 md:pb-0">
+      <RouterView v-slot="{ Component, route: current }">
         <AnimatePresence mode="wait">
           <motion.div
-            :key="page"
-            :initial="{ opacity: 0, y: 12 }"
+            :key="current.path"
+            :initial="{ opacity: 0, y: 14 }"
             :animate="{ opacity: 1, y: 0 }"
             :exit="{ opacity: 0, y: -8 }"
-            :transition="{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }"
+            :transition="{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }"
           >
-            <MapView v-if="page === 'map'" @book="onBook" />
-            <ProfileView v-else-if="page === 'profile'" />
-            <EquipmentView v-else-if="page === 'equipment'" @go-shop="selectPage('shop')" />
-            <ShopView v-else-if="page === 'shop'" @product-detail="openProductDetail" />
-            <CartView v-else-if="page === 'cart'" />
-            <FavoritesView v-else-if="page === 'favorites'" @product-detail="openProductDetail" />
+            <component :is="Component" v-if="current.meta.fullBleed" />
+            <div v-else class="shell py-9 sm:py-14">
+              <component :is="Component" />
+            </div>
           </motion.div>
         </AnimatePresence>
-      </main>
+      </RouterView>
+    </main>
 
-      <!-- Mobile bottom nav — 6 items, scrollable -->
-      <nav
-        class="md:hidden fixed bottom-0 inset-x-0 z-30 bottom-nav-blur pb-safe"
-      >
-        <div class="flex overflow-x-auto no-scrollbar px-1 pt-2">
-          <button
-            v-for="id in bottomNavIds"
-            :key="id"
-            type="button"
-            class="relative flex flex-col items-center justify-center gap-1 py-2 rounded-xl min-h-[56px] min-w-[64px] flex-1 transition-colors shrink-0"
-            :style="{
-              color: page === id ? navItems.find((n) => n.id === id)?.color : '#64748b',
-              background:
-                page === id ? `${navItems.find((n) => n.id === id)?.color}14` : 'transparent',
-            }"
-            @click="onBottomNav(id)"
-          >
-            <span class="text-lg leading-none">
-              {{ navItems.find((n) => n.id === id)?.icon }}
-            </span>
-            <span class="text-[10px] font-semibold leading-none">
-              {{ navItems.find((n) => n.id === id)?.short }}
-            </span>
-            <span
-              v-if="id === 'cart' && cartCount > 0"
-              class="absolute top-1.5 right-[18%] min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-              style="background: #06b6d4; color: #0a1200"
-            >
-              {{ cartCount }}
-            </span>
-            <span
-              v-if="id === 'favorites' && favorites.length > 0"
-              class="absolute top-1.5 right-[18%] min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-              style="background: #ef4444; color: #fff"
-            >
-              {{ favorites.length }}
-            </span>
-          </button>
+    <footer class="site-footer">
+      <div class="shell site-footer__grid">
+        <nav aria-label="Mua sắm">
+          <h2>Mua sắm</h2>
+          <ul>
+            <li><RouterLink :to="{ name: 'courts' }">Đặt sân</RouterLink></li>
+            <li><RouterLink :to="{ name: 'shop' }">Cửa hàng</RouterLink></li>
+            <li><RouterLink :to="{ name: 'favorites' }">Yêu thích</RouterLink></li>
+            <li><RouterLink :to="{ name: 'cart' }">Giỏ hàng</RouterLink></li>
+          </ul>
+        </nav>
+        <nav aria-label="Tài khoản">
+          <h2>Tài khoản</h2>
+          <ul>
+            <li>
+              <RouterLink
+                :to="isAuthenticated ? { name: 'profile' } : { name: 'login' }"
+              >
+                {{ isAuthenticated ? 'Hồ sơ' : 'Đăng nhập' }}
+              </RouterLink>
+            </li>
+            <li><RouterLink :to="{ name: 'equipment' }">Trang bị</RouterLink></li>
+            <li><a href="#main">Đơn hàng</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Hỗ trợ">
+          <h2>Hỗ trợ</h2>
+          <ul>
+            <li><a href="#main">Liên hệ</a></li>
+            <li><a href="#main">Đổi trả</a></li>
+            <li><a href="#main">Chính sách</a></li>
+            <li><a href="#main">Điều khoản</a></li>
+          </ul>
+        </nav>
+        <div>
+          <h2>JBadminton</h2>
+          <p>
+            Đặt sân theo giờ tại Hà Nội và mua trang bị chính hãng — một nơi.
+          </p>
+          <p class="site-footer__phone">024 7109 4482 · 6:00–22:30</p>
         </div>
-      </nav>
-    </div>
+      </div>
+      <div class="shell site-footer__legal">
+        <span>© {{ year }} JBadminton, Inc. All Rights Reserved</span>
+        <span>Số 27 Trần Thái Tông, Cầu Giấy, Hà Nội</span>
+      </div>
+    </footer>
+
+    <nav
+      class="md:hidden fixed bottom-0 inset-x-0 bottom-nav-blur pb-safe"
+      style="z-index: var(--z-sticky)"
+      aria-label="Điều hướng dưới"
+    >
+      <div class="flex px-1.5 pt-2">
+        <RouterLink
+          v-for="item in bottomNavItems"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="bottom-link relative flex flex-col items-center justify-center gap-1.5 py-2 rounded-2xl min-h-[54px] flex-1"
+        >
+          <Icon :name="item.icon" :size="20" />
+          <span class="text-[10.5px] font-semibold leading-none">{{ item.label }}</span>
+          <span
+            v-if="badgeCount(item.name) > 0"
+            class="absolute top-1 right-[22%] min-w-[16px] h-4 px-1 rounded-full mono text-[9.5px] font-bold flex items-center justify-center"
+            style="background: var(--accent); color: #0a1200"
+          >
+            {{ badgeCount(item.name) }}
+          </span>
+        </RouterLink>
+      </div>
+    </nav>
 
     <AnimatePresence>
       <BookingModal v-if="bookingCourt" :court="bookingCourt" @close="closeBooking" />
-      <ProductDetailModal
-        v-if="productDetail"
-        :product="productDetail"
-        :is-fav="productDetailIsFav"
-        @close="closeProductDetail"
-        @add-to-cart="onProductAddToCart"
-        @toggle-fav="onProductToggleFav"
-        @add-to-equipment="onProductAddToEquipment"
-      />
     </AnimatePresence>
   </div>
 </template>

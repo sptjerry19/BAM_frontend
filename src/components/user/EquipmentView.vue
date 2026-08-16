@@ -9,6 +9,7 @@ import {
 } from '../../api'
 import Stars from '../common/Stars.vue'
 import FormField from '../common/FormField.vue'
+import Icon from '../common/Icon.vue'
 import { categoryLabels, formatCurrency, catIcons, productImageUrl } from '../../utils/labels'
 
 const emit = defineEmits(['go-shop'])
@@ -156,17 +157,19 @@ function viewProduct(p) {
 }
 
 onMounted(async () => {
-  products.value = await getProducts()
+  products.value = (await getProducts(undefined, { per_page: 100 })).data
   await loadCustom()
 })
 </script>
 
 <template>
   <div class="space-y-6">
-    <motion.div :initial="{ opacity: 0, y: -10 }" :animate="{ opacity: 1, y: 0 }">
+    <header>
       <h1 class="page-title">Trang bị của tôi</h1>
-      <p style="color: #64748b; margin-top: 4px; font-size: 14px">Quản lý dụng cụ cầu lông cá nhân</p>
-    </motion.div>
+      <p class="lede mt-3">
+        Lưu lại vợt, giày và phụ kiện đang dùng để theo dõi chi phí và biết khi nào cần thay.
+      </p>
+    </header>
 
     <div class="flex gap-1 p-1 rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar" style="background: rgba(255,255,255,0.04)">
       <button
@@ -284,14 +287,20 @@ onMounted(async () => {
 
         <motion.div
           v-else
-          class="rounded-2xl p-8 text-center"
-          style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1)"
+          class="surface-quiet px-6 py-14 text-center"
           :initial="{ opacity: 0 }"
           :animate="{ opacity: 1 }"
         >
-          <div class="text-4xl opacity-20 mb-3">⊞</div>
-          <p class="text-sm" style="color: #64748b">Chưa có trang bị từ cửa hàng</p>
-          <p class="text-xs mt-2" style="color: #475569">Chọn sản phẩm có sẵn hoặc mở cửa hàng để xem chi tiết</p>
+          <span
+            class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center"
+            style="background: var(--accent-soft); color: var(--accent)"
+          >
+            <Icon name="racket" :size="23" />
+          </span>
+          <p class="font-heading font-bold text-[16px] mt-4">Chưa có trang bị nào từ cửa hàng</p>
+          <p class="text-[13px] mt-1.5" style="color: var(--text-3)">
+            Chọn sản phẩm bạn đang dùng để lưu vào danh sách này.
+          </p>
         </motion.div>
       </motion.div>
 
@@ -312,14 +321,17 @@ onMounted(async () => {
           + Thêm trang bị tùy chỉnh
         </motion.button>
 
-        <div
-          v-if="customCount === 0"
-          class="rounded-2xl p-8 text-center"
-          style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1)"
-        >
-          <div class="text-4xl opacity-20 mb-3">📦</div>
-          <p class="text-sm" style="color: #64748b">Chưa có trang bị tùy chỉnh</p>
-          <p class="text-xs mt-2" style="color: #475569">Upload ảnh và nhập thông tin sản phẩm của bạn</p>
+        <div v-if="customCount === 0" class="surface-quiet px-6 py-14 text-center">
+          <span
+            class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center"
+            style="background: var(--accent-soft); color: var(--accent)"
+          >
+            <Icon name="bag" :size="23" />
+          </span>
+          <p class="font-heading font-bold text-[16px] mt-4">Chưa có trang bị tùy chỉnh</p>
+          <p class="text-[13px] mt-1.5" style="color: var(--text-3)">
+            Tải ảnh và nhập thông tin món đồ bạn tự mua ngoài cửa hàng.
+          </p>
         </div>
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -370,7 +382,8 @@ onMounted(async () => {
     <AnimatePresence>
       <motion.div
         v-if="showForm"
-        class="fixed inset-0 modal-backdrop z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+        class="fixed inset-0 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+        style="z-index: var(--z-modal)"
         :initial="{ opacity: 0 }"
         :animate="{ opacity: 1 }"
         :exit="{ opacity: 0 }"
@@ -421,7 +434,7 @@ onMounted(async () => {
 
             <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
 
-            <div class="flex gap-3 pt-2 sticky bottom-0 pb-1" style="background: linear-gradient(to top, #0d1424 80%, transparent)">
+            <div class="flex gap-3 pt-2 sticky bottom-0 pb-1" style="background: linear-gradient(to top, var(--bg-2) 80%, transparent)">
               <motion.button
                 type="button"
                 class="flex-1 btn-ghost py-3 rounded-xl text-sm min-h-[48px]"
@@ -449,7 +462,8 @@ onMounted(async () => {
     <AnimatePresence>
       <motion.div
         v-if="showPicker"
-        class="fixed inset-0 modal-backdrop z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+        class="fixed inset-0 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+        style="z-index: var(--z-modal)"
         :initial="{ opacity: 0 }"
         :animate="{ opacity: 1 }"
         :exit="{ opacity: 0 }"

@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import AuthShell from './AuthShell.vue'
 import FormField from '../common/FormField.vue'
 import { useAuth } from '../../composables/useAuth'
 
-const emit = defineEmits(['goto'])
-
+const router = useRouter()
 const { register, loading, apiErrorMessage } = useAuth()
 
 const form = ref({
@@ -29,13 +29,14 @@ async function onSubmit() {
     return
   }
   try {
-    await register({
+    const account = await register({
       name: form.value.name.trim(),
       email: form.value.email.trim(),
       phone: form.value.phone.trim() || null,
       password: form.value.password,
       password_confirmation: form.value.password_confirmation,
     })
+    router.replace({ name: account?.role === 'admin' ? 'admin-dashboard' : 'courts' })
   } catch (err) {
     error.value = apiErrorMessage(err, 'Đăng ký thất bại')
   }
@@ -70,9 +71,9 @@ async function onSubmit() {
 
     <p class="text-center text-sm mt-5" style="color: #64748b">
       Đã có tài khoản?
-      <button type="button" class="font-semibold ml-1" style="color: #84cc16" @click="emit('goto', 'login')">
+      <RouterLink :to="{ name: 'login' }" class="font-semibold ml-1" style="color: #84cc16">
         Đăng nhập
-      </button>
+      </RouterLink>
     </p>
   </AuthShell>
 </template>

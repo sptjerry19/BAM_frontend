@@ -53,7 +53,8 @@ async function submit() {
 
 <template>
   <motion.div
-    class="fixed inset-0 modal-backdrop z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    class="fixed inset-0 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4"
+    style="z-index: var(--z-modal)"
     :initial="{ opacity: 0 }"
     :animate="{ opacity: 1 }"
     :exit="{ opacity: 0 }"

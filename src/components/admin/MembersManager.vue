@@ -104,11 +104,11 @@ const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
             <span
               v-if="member.status === 'active'"
               class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
-              style="background: #84cc16; border-color: #070b14"
+              style="background: var(--accent); border-color: var(--bg)"
             />
           </div>
           <div class="flex-1 min-w-0">
-            <div class="font-medium truncate" style="color: #f0f4ff">{{ member.name }}</div>
+            <div class="font-medium truncate" style="color: var(--text)">{{ member.name }}</div>
             <div class="text-xs truncate mt-0.5" style="color: #64748b">{{ member.email }}</div>
             <div class="flex items-center gap-2 mt-2">
               <span
@@ -131,7 +131,7 @@ const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
             <div style="color: #64748b; margin-top: 2px">Điểm</div>
           </div>
           <div class="rounded-xl py-2.5" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06)">
-            <div class="font-bold mono" style="color: #f0f4ff">{{ member.matches }}</div>
+            <div class="font-bold mono" style="color: var(--text)">{{ member.matches }}</div>
             <div style="color: #64748b; margin-top: 2px">Trận</div>
           </div>
           <div class="rounded-xl py-2.5" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06)">
@@ -151,11 +151,11 @@ const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
               <span
                 v-if="detail.status === 'active'"
                 class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
-                style="background: #84cc16; border-color: #070b14"
+                style="background: var(--accent); border-color: var(--bg)"
               />
             </div>
             <div>
-              <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #f0f4ff">
+              <div style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 18px; font-weight: 800; color: var(--text)">
                 {{ detail.name }}
               </div>
               <div class="text-sm" style="color: #64748b">{{ detail.email }}</div>
@@ -178,11 +178,11 @@ const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
             </div>
             <div class="glass rounded-xl p-3">
               <div class="text-xs uppercase tracking-wider mb-1" style="color: #64748b">Tổng chi tiêu</div>
-              <div class="font-bold mono" style="color: #f0f4ff">{{ formatCurrency(detail.total_cost) }}</div>
+              <div class="font-bold mono" style="color: var(--text)">{{ formatCurrency(detail.total_cost) }}</div>
             </div>
             <div class="glass rounded-xl p-3">
               <div class="text-xs uppercase tracking-wider mb-1" style="color: #64748b">Trận / Thắng</div>
-              <div class="mono" style="color: #f0f4ff">{{ detail.matches }} / {{ detail.wins }}</div>
+              <div class="mono" style="color: var(--text)">{{ detail.matches }} / {{ detail.wins }}</div>
             </div>
             <div class="glass rounded-xl p-3">
               <div class="text-xs uppercase tracking-wider mb-1" style="color: #64748b">Tỷ lệ thắng</div>

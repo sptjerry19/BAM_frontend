@@ -1,0 +1,486 @@
+/* Home — Nike-inspired campaign storefront */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.home {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
+  background: var(--bg);
+}
+
+/* ---------- Hero ---------- */
+
+.nk-hero {
+  position: relative;
+  min-height: clamp(560px, 88svh, 920px);
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  overflow: hidden;
+}
+
+.nk-hero__media {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.nk-hero__shot {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  will-change: transform, opacity;
+}
+
+.nk-hero__shot.is-kb-0 {
+  animation: nk-kb-0 14s var(--ease-out) forwards;
+}
+.nk-hero__shot.is-kb-1 {
+  animation: nk-kb-1 14s var(--ease-out) forwards;
+}
+.nk-hero__shot.is-kb-2 {
+  animation: nk-kb-2 14s var(--ease-out) forwards;
+}
+
+@keyframes nk-kb-0 {
+  from { transform: scale(1.04); }
+  to { transform: scale(1.16) translate3d(-1.5%, -1%, 0); }
+}
+@keyframes nk-kb-1 {
+  from { transform: scale(1.14) translate3d(2%, 1%, 0); }
+  to { transform: scale(1.04); }
+}
+@keyframes nk-kb-2 {
+  from { transform: scale(1.06) translate3d(1%, -1%, 0); }
+  to { transform: scale(1.18) translate3d(-2%, 1%, 0); }
+}
+
+.nk-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.2) 42%, rgba(0, 0, 0, 0.15) 100%);
+}
+
+.nk-hero__copy {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-bottom: clamp(48px, 8vh, 88px);
+  padding-top: 120px;
+}
+
+.nk-hero__kicker {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.nk-hero__title {
+  margin: 0;
+  font-size: clamp(40px, 7.5vw, 72px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  max-width: 12ch;
+}
+
+.nk-hero__line {
+  display: block;
+}
+
+.nk-hero__cta {
+  margin-top: 28px;
+  padding: 10px 28px;
+  font-size: 16px;
+  background: #fff;
+  color: #111;
+}
+
+.nk-hero__cta:hover {
+  opacity: 0.9;
+}
+
+.nk-hero__dots {
+  display: flex;
+  gap: 10px;
+  margin-top: 36px;
+}
+
+.nk-hero__dot {
+  position: relative;
+  width: 36px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  transition: width 0.35s var(--ease-out);
+}
+
+.nk-hero__dot.is-active {
+  width: 56px;
+}
+
+.nk-hero__fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  transform-origin: left center;
+  animation-name: nk-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes nk-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nk-hero__shot {
+    animation: none;
+    transform: scale(1.05);
+  }
+}
+
+/* ---------- Campaign cards ---------- */
+
+.nk-campaigns {
+  display: grid;
+  gap: 12px;
+  padding: 12px clamp(12px, 2vw, 24px);
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+@media (min-width: 900px) {
+  .nk-campaigns {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .nk-card--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.nk-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-2);
+  min-height: clamp(420px, 56vh, 620px);
+  color: #fff;
+}
+
+.nk-card--half {
+  min-height: clamp(480px, 62vh, 700px);
+}
+
+.nk-card__media {
+  position: absolute;
+  inset: 0;
+}
+
+.nk-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s var(--ease-out);
+}
+
+.nk-card:hover .nk-card__media img {
+  transform: scale(1.04);
+}
+
+.nk-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  min-height: inherit;
+  padding: clamp(28px, 4vw, 48px);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.15) 55%, transparent 100%);
+}
+
+.nk-card__kicker {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nk-card__title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.nk-card__copy {
+  margin: 12px 0 0;
+  max-width: 36ch;
+  font-size: 15px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.nk-card__cta {
+  align-self: flex-start;
+  margin-top: 22px;
+  padding: 10px 26px;
+  font-size: 15px;
+  background: #fff;
+  color: #111;
+}
+
+/* ---------- Closing ---------- */
+
+.nk-close {
+  padding: clamp(72px, 12vh, 120px) 0;
+  text-align: center;
+  background: var(--bg-2);
+}
+
+.nk-close__inner {
+  max-width: 720px;
+}
+
+.nk-close h2 {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.nk-close__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* ---------- Top-5 bestsellers (trending) ---------- */
+
+.home-tops {
+  padding: clamp(56px, 10vh, 96px) 0;
+}
+
+.home-tops__head {
+  margin-bottom: 28px;
+}
+
+.home-tops__stage {
+  position: relative;
+  min-height: clamp(520px, 68vh, 680px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 0 32px;
+  overflow: hidden;
+  background: var(--bg-2);
+  perspective: 1200px;
+}
+
+.home-tops__glow {
+  display: none;
+}
+
+.home-tops__stack {
+  position: relative;
+  width: min(1100px, 100%);
+  height: clamp(460px, 58vh, 560px);
+  margin-inline: auto;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.home-tops__stack--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-tops__card {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(340px, 78vw);
+  height: 100%;
+  margin-left: calc(min(340px, 78vw) / -2);
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, filter;
+}
+
+.home-tops__card.is-active {
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.home-tops__card--static {
+  position: relative;
+  left: auto;
+  margin-left: 0;
+  min-height: 420px;
+}
+
+.home-tops__rank {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  padding: 5px 10px;
+  border-radius: 2px;
+  background: rgba(17, 17, 17, 0.72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+
+.home-tops__media {
+  flex: 1.15;
+  min-height: 0;
+  background: var(--bg-2);
+}
+
+.home-tops__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.home-tops__body {
+  flex-shrink: 0;
+  padding: 16px 16px 18px;
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+}
+
+.home-tops__meta {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.home-tops__name {
+  margin: 6px 0 0;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-tops__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.home-tops__price {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.home-tops__sold {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.home-tops__add {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.home-tops__controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  z-index: 2;
+}
+
+.home-tops__dots {
+  display: flex;
+  gap: 8px;
+}
+
+.home-tops__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--line-2);
+  transition: width 0.35s var(--ease-out), background 0.3s var(--ease-out);
+}
+
+.home-tops__dot.is-active {
+  width: 22px;
+  background: var(--text);
+}
+
+.home-tops__empty {
+  text-align: center;
+  padding: 48px 20px;
+  z-index: 1;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .home-tops__stage {
+    min-height: clamp(480px, 72vh, 600px);
+    padding: 28px 0 24px;
+  }
+
+  .home-tops__stack {
+    height: clamp(420px, 56vh, 500px);
+  }
+
+  .home-tops__card {
+    width: min(280px, 72vw);
+    margin-left: calc(min(280px, 72vw) / -2);
+  }
+}

@@ -1,12 +1,41 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="theme-light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#070b14" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>Badminton Manager</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('jb_theme')
+          if (t !== 'light' && t !== 'dark') t = 'light'
+          var r = document.documentElement
+          r.classList.remove('theme-light', 'theme-dark')
+          r.classList.add(t === 'light' ? 'theme-light' : 'theme-dark')
+          r.style.colorScheme = t
+          var m = document.querySelector('meta[name="theme-color"]')
+          if (m) m.setAttribute('content', t === 'light' ? '#ffffff' : '#111111')
+        } catch (e) {}
+      })()
+    </script>
+    <title>JBadminton — Đặt sân và mua trang bị cầu lông tại Hà Nội</title>
+    <meta
+      name="description"
+      content="Đặt sân cầu lông theo giờ tại Hà Nội và mua vợt, giày, cầu chính hãng. Xem giá trước khi đặt, giao trong 48 giờ, đổi trả 14 ngày."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="JBadminton — Đặt sân và mua trang bị" />
+    <meta
+      property="og:description"
+      content="Sân trống cập nhật theo phút, giá theo giờ minh bạch, trang bị chính hãng trong cùng một ứng dụng."
+    />
+    <meta
+      property="og:image"
+      content="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&h=630&fit=crop"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>

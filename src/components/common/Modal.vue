@@ -27,14 +27,14 @@ defineEmits(['close'])
     >
       <div class="flex items-center justify-between mb-6">
         <h2
-          style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #f0f4ff"
+          style="font-family: 'Be Vietnam Pro', sans-serif; font-size: 20px; font-weight: 800; color: var(--text)"
         >
           {{ title }}
         </h2>
         <motion.button
           type="button"
           class="btn-ghost w-9 h-9 p-0 rounded-full flex items-center justify-center text-xl leading-none"
-          style="color: #64748b"
+          style="color: var(--text-3)"
           :whileHover="{ rotate: 90 }"
           :transition="{ duration: 0.2 }"
           @click="$emit('close')"

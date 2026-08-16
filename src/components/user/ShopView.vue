@@ -1,52 +1,235 @@
 <script setup>
-import { ref, inject, onMounted, computed } from 'vue'
-import { motion, AnimatePresence } from 'motion-v'
+/**
+ * Shop — Nike-style product listing (filters + image-first grid).
+ */
+import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { getProducts } from '../../api'
-import Stars from '../common/Stars.vue'
-import { categoryLabels, catIcons, formatCurrency } from '../../utils/labels'
+import Icon from '../common/Icon.vue'
+import CategoryDropdown from './CategoryDropdown.vue'
+import { categoryLabels, formatCurrency, productCoverUrl } from '../../utils/labels'
 
+const router = useRouter()
 const cart = inject('cart')
 const favorites = inject('favorites')
 const addToCartFn = inject('addToCart')
 const toggleFavorite = inject('toggleFavorite')
-const openProductDetail = inject('openProductDetail', null)
-
-const emit = defineEmits(['product-detail'])
 
 const products = ref([])
 const filter = ref('all')
 const search = ref('')
+const searchQuery = ref('')
+const page = ref(1)
+const perPage = ref(12)
+const loading = ref(true)
 const addedId = ref(null)
+const filtersOpen = ref(false)
+const pagination = ref({
+  current_page: 1,
+  per_page: 12,
+  total: 0,
+  last_page: 1,
+  from: 0,
+  to: 0,
+  has_more_pages: false,
+})
 
-const cats = [
+/**
+ * UI category tree. `children` prepare for future BE subcategories.
+ * Leaves that already exist in BE (shirt, bag, …) are queried as-is;
+ * synthetic leaves fall back to their parent id for the current API.
+ */
+const categoryTree = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'racket', label: '🏸 Vợt' },
-  { id: 'shoes', label: '👟 Giày' },
-  { id: 'shirt', label: '👕 Áo' },
-  { id: 'shorts', label: '🩳 Quần' },
-  { id: 'shuttlecock', label: 'Cầu' },
-  { id: 'bag', label: '🎒 Túi' },
-  { id: 'grip', label: 'Grip' },
+  {
+    id: 'racket',
+    label: 'Vợt',
+    children: [
+      { id: 'racket-offensive', label: 'Tấn công' },
+      { id: 'racket-defensive', label: 'Phòng thủ' },
+      { id: 'racket-allround', label: 'Toàn diện' },
+    ],
+  },
+  {
+    id: 'shoes',
+    label: 'Giày',
+    children: [
+      { id: 'shoes-indoor', label: 'Trong nhà' },
+      { id: 'shoes-training', label: 'Tập luyện' },
+    ],
+  },
+  {
+    id: 'apparel',
+    label: 'Trang phục',
+    children: [
+      { id: 'shirt', label: 'Áo' },
+      { id: 'shorts', label: 'Quần' },
+    ],
+  },
+  {
+    id: 'shuttlecock',
+    label: 'Cầu',
+    children: [
+      { id: 'shuttlecock-feather', label: 'Cầu lông vũ' },
+      { id: 'shuttlecock-nylon', label: 'Cầu nhựa' },
+    ],
+  },
+  {
+    id: 'accessories',
+    label: 'Phụ kiện',
+    children: [
+      { id: 'bag', label: 'Túi' },
+      { id: 'grip', label: 'Grip' },
+    ],
+  },
 ]
 
-const filtered = computed(() =>
-  products.value
-    .filter((p) => filter.value === 'all' || p.category === filter.value)
-    .filter((p) => {
-      if (!search.value) return true
-      const q = search.value.toLowerCase()
-      return p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
-    }),
-)
+/** Categories the current products API already understands. */
+const BE_CATEGORIES = new Set([
+  'racket',
+  'shoes',
+  'shirt',
+  'shorts',
+  'shuttlecock',
+  'bag',
+  'grip',
+])
 
-onMounted(async () => {
-  products.value = await getProducts()
+/** Map UI selection → API `category` param (no BE changes). */
+function apiCategoryFromFilter(uiId) {
+  if (!uiId || uiId === 'all') return undefined
+  if (BE_CATEGORIES.has(uiId)) return uiId
+
+  for (const node of categoryTree) {
+    if (node.id === 'all') continue
+    if (node.id === uiId) {
+      return BE_CATEGORIES.has(node.id) ? node.id : undefined
+    }
+    const child = (node.children || []).find((c) => c.id === uiId)
+    if (child) {
+      if (BE_CATEGORIES.has(child.id)) return child.id
+      if (BE_CATEGORIES.has(node.id)) return node.id
+    }
+  }
+  return undefined
+}
+
+function labelForFilter(uiId) {
+  if (!uiId || uiId === 'all') return 'Cửa hàng trang bị'
+  for (const node of categoryTree) {
+    if (node.id === uiId) return node.label
+    const child = (node.children || []).find((c) => c.id === uiId)
+    if (child) return child.label
+  }
+  return 'Cửa hàng'
+}
+
+const pageNumbers = computed(() => {
+  const last = pagination.value.last_page || 1
+  const current = pagination.value.current_page || 1
+  const windowSize = 5
+  let start = Math.max(1, current - Math.floor(windowSize / 2))
+  const end = Math.min(last, start + windowSize - 1)
+  start = Math.max(1, end - windowSize + 1)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
 })
+
+const heading = computed(() => labelForFilter(filter.value))
+
+const countLabel = computed(() => {
+  const total = pagination.value.total || 0
+  return `(${total.toLocaleString('vi-VN')})`
+})
+
+let searchTimer = null
+
+async function loadProducts() {
+  loading.value = true
+  try {
+    const category = apiCategoryFromFilter(filter.value)
+    const res = await getProducts(category, {
+      page: page.value,
+      per_page: perPage.value,
+      ...(searchQuery.value ? { search: searchQuery.value } : {}),
+    })
+    products.value = res.data
+    if (res.pagination) {
+      pagination.value = res.pagination
+      page.value = res.pagination.current_page
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+function goToPage(p) {
+  const last = pagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === page.value) return
+  page.value = next
+  loadProducts()
+  document.getElementById('shop-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function setFilter(id) {
+  const changed = filter.value !== id
+  filter.value = id
+  filtersOpen.value = false
+  if (changed) {
+    page.value = 1
+    loadProducts()
+  }
+}
+
+function openFilters() {
+  filtersOpen.value = true
+}
+
+function closeFilters() {
+  filtersOpen.value = false
+}
+
+watch(filtersOpen, (open) => {
+  document.body.classList.toggle('is-locked', open)
+})
+
+watch(search, (value) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    searchQuery.value = value.trim()
+    page.value = 1
+    loadProducts()
+  }, 350)
+})
+
+onMounted(loadProducts)
+
+onUnmounted(() => {
+  clearTimeout(searchTimer)
+  document.body.classList.remove('is-locked')
+})
+
+function resetFilters() {
+  filter.value = 'all'
+  search.value = ''
+  searchQuery.value = ''
+  page.value = 1
+  filtersOpen.value = false
+  loadProducts()
+}
+
+function openDetail(p) {
+  router.push({ name: 'product-detail', params: { id: String(p.id) } })
+}
 
 function addToCart(productId) {
   addToCartFn(productId)
   addedId.value = productId
-  setTimeout(() => { addedId.value = null }, 1200)
+  setTimeout(() => {
+    addedId.value = null
+  }, 1200)
 }
 
 function isFavorite(id) {
@@ -57,176 +240,216 @@ function inCart(id) {
   return cart.value.find((x) => x.productId === id)
 }
 
-function catFilterStyle(id) {
-  if (filter.value !== id) {
-    return { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }
-  }
-  return { background: '#84cc16', color: '#0a1200', border: '1px solid transparent', fontWeight: 700 }
-}
-
-function cartBtnStyle(p, justAdded, inCartItem) {
-  if (justAdded) {
-    return { background: 'rgba(132,204,22,0.15)', color: '#84cc16', border: '1px solid rgba(132,204,22,0.3)' }
-  }
-  if (inCartItem) {
-    return { background: 'rgba(132,204,22,0.1)', color: '#84cc16', border: '1px solid rgba(132,204,22,0.25)' }
-  }
-  return { background: 'linear-gradient(135deg, #84cc16, #a3e635)', color: '#0a1200', border: 'none' }
-}
-
-function cartBtnLabel(p, justAdded, inCartItem) {
-  if (p.stock === 0) return 'Hết hàng'
-  if (justAdded) return '✓ Đã thêm!'
-  if (inCartItem) return `Giỏ hàng (${inCartItem.qty})`
-  return 'Thêm vào giỏ'
-}
-
-function onProductClick(p) {
-  if (openProductDetail) openProductDetail(p)
-  else emit('product-detail', p)
+function discountPct(p) {
+  if (!p.original_price || p.original_price <= p.price) return 0
+  return Math.round((1 - p.price / p.original_price) * 100)
 }
 </script>
 
 <template>
-  <div class="space-y-6">
-    <motion.div :initial="{ opacity: 0, y: -10 }" :animate="{ opacity: 1, y: 0 }">
-      <h1 class="font-heading" style="font-size: 30px; font-weight: 800; letter-spacing: -0.5px">Cửa hàng</h1>
-      <p style="color: #64748b; margin-top: 4px; font-size: 14px">Trang bị cầu lông chính hãng · Giao hàng miễn phí</p>
-    </motion.div>
-
-    <motion.div
-      class="flex flex-wrap gap-2 items-center"
-      :initial="{ opacity: 0 }"
-      :animate="{ opacity: 1 }"
-      :transition="{ delay: 0.1 }"
-    >
-      <div class="relative w-full">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: #475569">🔍</span>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Tìm sản phẩm..."
-          class="input-field rounded-xl pl-9 pr-4 py-2.5 text-sm w-52 w-full"
-        />
+  <div class="plp">
+    <header class="shell plp__head">
+      <div>
+        <h1 class="plp__title">
+          {{ heading }}
+          <span class="plp__count">{{ countLabel }}</span>
+        </h1>
       </div>
-      <motion.button
-        v-for="c in cats"
-        :key="c.id"
-        class="pill transition-all"
-        :style="catFilterStyle(c.id)"
-        :while-hover="{ scale: 1.04 }"
-        :while-tap="{ scale: 0.96 }"
-        @click="filter = c.id"
-      >
-        {{ c.label }}
-      </motion.button>
-    </motion.div>
 
-    <motion.div layout class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <AnimatePresence>
-        <motion.div
-          v-for="(p, i) in filtered"
-          :key="p.id"
-          layout
-          class="rounded-2xl overflow-hidden group relative"
-          style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07)"
-          :initial="{ opacity: 0, scale: 0.9 }"
-          :animate="{ opacity: 1, scale: 1 }"
-          :exit="{ opacity: 0, scale: 0.85 }"
-          :transition="{ delay: i * 0.04 }"
-          :while-hover="{ y: -4, borderColor: 'rgba(255,255,255,0.14)' }"
+      <div class="plp__tools">
+        <div class="plp__search">
+          <Icon name="search" :size="17" />
+          <label class="sr-only" for="shop-search">Tìm sản phẩm</label>
+          <input
+            id="shop-search"
+            v-model="search"
+            type="search"
+            placeholder="Tìm vợt, giày, thương hiệu..."
+          />
+        </div>
+        <button
+          type="button"
+          class="plp__filter-toggle"
+          aria-haspopup="dialog"
+          :aria-expanded="filtersOpen"
+          @click="openFilters"
         >
-          <div
-            class="relative h-36 flex items-center justify-center overflow-hidden cursor-pointer product-img-bg"
-            @click="onProductClick(p)"
-          >
-            <motion.div
-              style="font-size: 56px; opacity: 0.35"
-              :animate="{ y: [-3, 3, -3] }"
-              :transition="{ duration: 3 + i * 0.3, repeat: Infinity, ease: 'easeInOut' }"
-            >
-              {{ catIcons[p.category] || '◈' }}
-            </motion.div>
-            <div
-              class="absolute inset-x-0 bottom-0 h-12"
-              style="background: linear-gradient(to top, rgba(255,255,255,0.04), transparent)"
-            />
-            <div class="absolute top-2 left-2 flex gap-1.5">
-              <span
-                v-if="p.original_price && p.original_price > p.price"
-                class="pill"
-                style="background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-size: 10px"
-              >
-                -{{ Math.round((1 - p.price / p.original_price) * 100) }}%
-              </span>
-              <span
-                v-if="p.featured"
-                class="pill"
-                style="background: rgba(250,204,21,0.2); color: #facc15; border: 1px solid rgba(250,204,21,0.3); font-size: 10px"
-              >
-                🔥 Hot
-              </span>
-            </div>
-            <motion.button
-              class="absolute top-2 right-2 w-10 h-10 sm:w-7 sm:h-7 rounded-full flex items-center justify-center"
-              :style="{
-                background: isFavorite(p.id) ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)',
-                color: isFavorite(p.id) ? '#ef4444' : '#64748b',
-                border: `1px solid ${isFavorite(p.id) ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              }"
-              :while-hover="{ scale: 1.15 }"
-              :while-tap="{ scale: 0.85 }"
-              @click.stop="toggleFavorite(p.id)"
-            >
-              <motion.span
-                style="font-size: 13px"
-                :animate="isFavorite(p.id) ? { scale: [1, 1.4, 1] } : {}"
-                :transition="{ duration: 0.3 }"
-              >
-                {{ isFavorite(p.id) ? '♥' : '♡' }}
-              </motion.span>
-            </motion.button>
-          </div>
+          <Icon name="menu" :size="16" />
+          Bộ lọc
+        </button>
+      </div>
+    </header>
 
-          <div class="p-4 cursor-pointer" @click="onProductClick(p)">
-            <div style="color: #475569; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px">
-              {{ p.brand }} · {{ categoryLabels[p.category] }}
+    <div class="shell plp__body">
+      <!-- Desktop sticky rail -->
+      <aside class="plp__filters" aria-label="Bộ lọc danh mục">
+        <div class="plp__filter-block">
+          <h2>Danh mục</h2>
+          <CategoryDropdown
+            :model-value="filter"
+            :tree="categoryTree"
+            :api-ids="[...BE_CATEGORIES]"
+            @update:model-value="setFilter"
+          />
+        </div>
+      </aside>
+
+      <!-- Mobile sheet: Teleport escapes transformed parents (route motion) -->
+      <Teleport to="body">
+        <div
+          v-if="filtersOpen"
+          class="plp__sheet"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Bộ lọc danh mục"
+        >
+          <button
+            type="button"
+            class="plp__sheet-backdrop"
+            aria-label="Đóng bộ lọc"
+            @click="closeFilters"
+          />
+          <div class="plp__sheet-panel">
+            <div class="plp__filters-head">
+              <strong>Bộ lọc</strong>
+              <button type="button" @click="closeFilters">Đóng</button>
             </div>
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px; line-height: 1.35">{{ p.name }}</div>
-            <Stars :rating="p.rating" />
-            <div class="flex items-baseline gap-2 mt-2 mb-3">
-              <span class="mono text-base" style="color: #84cc16; font-weight: 600">{{ formatCurrency(p.price) }}</span>
-              <span
-                v-if="p.original_price"
-                class="mono text-xs line-through"
-                style="color: #475569"
-              >
-                {{ formatCurrency(p.original_price) }}
-              </span>
+            <div class="plp__filter-block">
+              <h2>Danh mục</h2>
+              <CategoryDropdown
+                :model-value="filter"
+                :tree="categoryTree"
+                :api-ids="[...BE_CATEGORIES]"
+                @update:model-value="setFilter"
+              />
             </div>
-            <motion.button
-              class="w-full py-3 sm:py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed relative overflow-hidden min-h-[44px]"
-              :style="cartBtnStyle(p, addedId === p.id, inCart(p.id))"
-              :disabled="p.stock === 0"
-              :while-hover="p.stock > 0 ? { scale: 1.02 } : {}"
-              :while-tap="p.stock > 0 ? { scale: 0.97 } : {}"
-              @click.stop="addToCart(p.id)"
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  :key="addedId === p.id ? 'added' : 'normal'"
-                  :initial="{ opacity: 0, y: 6 }"
-                  :animate="{ opacity: 1, y: 0 }"
-                  :exit="{ opacity: 0, y: -6 }"
-                  :transition="{ duration: 0.2 }"
-                >
-                  {{ cartBtnLabel(p, addedId === p.id, inCart(p.id)) }}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
           </div>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+        </div>
+      </Teleport>
+
+      <div id="shop-grid" class="plp__main scroll-mt-24">
+        <div v-if="loading" class="plp__grid">
+          <div v-for="n in 8" :key="n" class="skeleton plp__skel" />
+        </div>
+
+        <div v-else-if="!products.length" class="plp__empty">
+          <p class="font-heading font-bold text-[18px]">Không tìm thấy sản phẩm nào</p>
+          <p class="mt-2 text-[14px]" style="color: var(--text-3)">
+            Thử từ khóa khác, hoặc bỏ bộ lọc danh mục đang chọn.
+          </p>
+          <button type="button" class="btn-text mt-5" @click="resetFilters">
+            Xóa bộ lọc
+            <Icon name="arrowRight" :size="16" />
+          </button>
+        </div>
+
+        <div v-else class="plp__grid">
+          <article
+            v-for="p in products"
+            :key="p.id"
+            class="plp__card"
+          >
+            <button type="button" class="plp__media" @click="openDetail(p)">
+              <img
+                :src="productCoverUrl(p)"
+                :alt="`${p.brand} ${p.name}`"
+                loading="lazy"
+              />
+              <span v-if="discountPct(p) > 0" class="plp__badge">−{{ discountPct(p) }}%</span>
+              <span v-else-if="p.featured" class="plp__badge plp__badge--soft">Bán chạy</span>
+              <span v-if="p.stock === 0" class="plp__oos">Tạm hết hàng</span>
+            </button>
+
+            <button
+              type="button"
+              class="plp__heart"
+              :class="{ 'is-on': isFavorite(p.id) }"
+              :aria-pressed="isFavorite(p.id)"
+              :aria-label="isFavorite(p.id) ? `Bỏ yêu thích` : `Yêu thích`"
+              @click="toggleFavorite(p.id)"
+            >
+              <Icon name="heart" :size="18" />
+            </button>
+
+            <div class="plp__info">
+              <button type="button" class="plp__name" @click="openDetail(p)">
+                {{ p.name }}
+              </button>
+              <p class="plp__meta">
+                {{ categoryLabels[p.category] || p.category }}
+                <template v-if="p.brand"> · {{ p.brand }}</template>
+              </p>
+              <p class="plp__price">
+                <span>{{ formatCurrency(p.price) }}</span>
+                <span
+                  v-if="p.original_price && p.original_price > p.price"
+                  class="plp__was"
+                >
+                  {{ formatCurrency(p.original_price) }}
+                </span>
+              </p>
+              <button
+                type="button"
+                class="plp__add"
+                :disabled="p.stock === 0"
+                @click="addToCart(p.id)"
+              >
+                {{
+                  p.stock === 0
+                    ? 'Hết hàng'
+                    : addedId === p.id
+                      ? 'Đã thêm'
+                      : inCart(p.id)
+                        ? `Trong giỏ · ${inCart(p.id).qty}`
+                        : 'Thêm vào giỏ'
+                }}
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <nav
+          v-if="pagination.last_page > 1"
+          class="plp__pager"
+          aria-label="Phân trang sản phẩm"
+        >
+          <p class="mono text-[12.5px]" style="color: var(--text-3)">
+            Trang {{ pagination.current_page }} / {{ pagination.last_page }}
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-1.5">
+            <button
+              type="button"
+              class="icon-btn border-0 bg-transparent disabled:opacity-30"
+              aria-label="Trang trước"
+              :disabled="pagination.current_page <= 1 || loading"
+              @click="goToPage(pagination.current_page - 1)"
+            >
+              <Icon name="arrowLeft" :size="17" />
+            </button>
+            <button
+              v-for="n in pageNumbers"
+              :key="n"
+              type="button"
+              class="plp__page"
+              :class="{ 'is-active': n === pagination.current_page }"
+              :aria-current="n === pagination.current_page ? 'page' : undefined"
+              :disabled="loading"
+              @click="goToPage(n)"
+            >
+              {{ n }}
+            </button>
+            <button
+              type="button"
+              class="icon-btn border-0 bg-transparent disabled:opacity-30"
+              aria-label="Trang sau"
+              :disabled="!pagination.has_more_pages || loading"
+              @click="goToPage(pagination.current_page + 1)"
+            >
+              <Icon name="arrowRight" :size="17" />
+            </button>
+          </div>
+        </nav>
+      </div>
+    </div>
   </div>
 </template>
