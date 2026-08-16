@@ -27,6 +27,8 @@ const emptyForm = () => ({
   image: 'https://jbam.id.vn/src/assets/uploads/background1.jpg',
   x: 50,
   y: 50,
+  lat: 21.0278,
+  lng: 105.8342,
 })
 
 const form = ref(emptyForm())
@@ -209,6 +211,27 @@ async function remove(id) {
             <FormField v-model="form.courts" label="Số sân" type="number" />
           </div>
           <FormField v-model="form.surfaces" label="Mặt sân" />
+          <div class="grid grid-cols-2 gap-4">
+            <FormField
+              v-model="form.lat"
+              label="Vĩ độ (lat)"
+              type="number"
+              step="0.0000001"
+              :min="-90"
+              :max="90"
+            />
+            <FormField
+              v-model="form.lng"
+              label="Kinh độ (lng)"
+              type="number"
+              step="0.0000001"
+              :min="-180"
+              :max="180"
+            />
+          </div>
+          <p class="text-[11.5px] -mt-2" style="color: var(--text-3)">
+            Lấy tọa độ bằng cách chuột phải vị trí trên Google Maps → chọn cặp số hiện ra.
+          </p>
           <FormField v-model="form.status" label="Trạng thái" type="select" :options="statusOptions" />
           <FormField v-model="form.phone" label="Điện thoại" />
           <FormField v-model="form.hours" label="Giờ mở cửa" />

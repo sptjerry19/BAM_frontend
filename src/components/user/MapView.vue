@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion-v'
 import { getCourts } from '../../api'
 import Stars from '../common/Stars.vue'
 import Icon from '../common/Icon.vue'
+import CourtMap from './CourtMap.vue'
 import { formatCurrency, productImageUrl } from '../../utils/labels'
 
 const emit = defineEmits(['book'])
@@ -423,6 +424,7 @@ function scrollToCourts() {
           <h2 id="map-title" class="section-head">Vị trí trên bản đồ</h2>
           <p class="lede mt-2.5 text-[14.5px]">
             Chạm vào điểm đánh dấu để xem chi tiết cụm sân. Số trên điểm là số mặt sân.
+            Nhấn vào bản đồ để bật cuộn phóng to.
           </p>
         </div>
         <span class="mono text-[12.5px]" style="color: var(--text-3)">Hà Nội, VN</span>
@@ -431,80 +433,22 @@ function scrollToCourts() {
       <div class="grid gap-5 lg:grid-cols-5">
         <motion.div
           class="lg:col-span-3 relative overflow-hidden map-canvas"
-          style="border-radius: var(--r-xl); background: #0b1526; border: 1px solid var(--line)"
+          style="border-radius: var(--r-xl); border: 1px solid var(--line)"
           :initial="{ opacity: 0, scale: 0.985 }"
           :animate="{ opacity: 1, scale: 1 }"
           :transition="{ duration: 0.5 }"
         >
-          <div
-            class="absolute inset-0"
-            style="background-image: linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px); background-size: 36px 36px"
+          <CourtMap
+            :courts="shown"
+            :selected="selected"
+            :status-colors="statusColors"
+            :status-short="statusShort"
+            @select="selectCourt"
+            @book="onBook($event)"
           />
-          <div
-            class="absolute inset-0 pointer-events-none"
-            style="background: radial-gradient(ellipse 60% 60% at 45% 45%, rgba(163,230,53,0.07), transparent)"
-          />
-
-          <svg class="absolute inset-0 w-full h-full" aria-hidden="true">
-            <line x1="0%" y1="50%" x2="100%" y2="50%" stroke="rgba(148,163,184,0.12)" stroke-width="2" />
-            <line x1="50%" y1="0%" x2="50%" y2="100%" stroke="rgba(148,163,184,0.12)" stroke-width="2" />
-            <ellipse
-              cx="46%"
-              cy="44%"
-              rx="5%"
-              ry="3.5%"
-              fill="rgba(56,189,248,0.12)"
-              stroke="rgba(56,189,248,0.2)"
-              stroke-width="1"
-            />
-          </svg>
-          <span
-            class="mono absolute"
-            style="left: 43%; top: 47%; font-size: 9px; color: rgba(125,190,255,0.65); letter-spacing: 0.05em"
-          >
-            Hồ Hoàn Kiếm
-          </span>
-
-          <motion.button
-            v-for="(c, i) in shown"
-            :key="c.id"
-            type="button"
-            class="absolute"
-            :style="{
-              left: `${c.x}%`,
-              top: `${c.y}%`,
-              transform: 'translate(-50%, -100%)',
-              zIndex: selected?.id === c.id ? 10 : 1,
-            }"
-            :aria-label="`${c.name}, ${c.courts} mặt sân`"
-            :initial="{ scale: 0, opacity: 0 }"
-            :animate="{ scale: 1, opacity: 1 }"
-            :transition="{ delay: 0.2 + i * 0.06, type: 'spring', stiffness: 300, damping: 20 }"
-            :while-hover="{ scale: 1.18 }"
-            :while-tap="{ scale: 0.9 }"
-            @click="selectCourt(c)"
-          >
-            <motion.span
-              v-if="c.status !== 'closed'"
-              class="absolute rounded-full block"
-              :style="{ inset: '-4px', background: statusColors[c.status], opacity: 0.3 }"
-              :animate="{ scale: [1, 1.6, 1], opacity: [0.3, 0, 0.3] }"
-              :transition="{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }"
-            />
-            <motion.span
-              class="w-9 h-9 rounded-full flex items-center justify-center mono text-xs font-bold relative"
-              :style="{
-                background: selected?.id === c.id ? statusColors[c.status] : `${statusColors[c.status]}22`,
-                border: `2px solid ${statusColors[c.status]}`,
-                color: selected?.id === c.id ? '#0a1200' : statusColors[c.status],
-              }"
-            >
-              {{ c.courts }}
-            </motion.span>
-          </motion.button>
 
           <div
-            class="absolute bottom-3.5 left-3.5 rounded-xl px-3.5 py-2.5 flex gap-3.5 glass"
+            class="absolute bottom-3.5 left-3.5 z-[500] rounded-xl px-3.5 py-2.5 flex gap-3.5 glass"
             style="border-radius: var(--r-sm)"
           >
             <span
