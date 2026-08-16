@@ -68,6 +68,7 @@ export default {
     checkoutConfirm: 'Xác nhận đơn hàng',
     favorites: 'Yêu thích',
     news: 'Tin tức',
+    newsDetail: 'Chi tiết tin',
     rankings: 'Bảng xếp hạng',
     athleteProfile: 'Hồ sơ vận động viên',
     topProducts: 'Top 10 sản phẩm',

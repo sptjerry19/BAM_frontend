@@ -14,6 +14,7 @@ import EquipmentView from '../components/user/EquipmentView.vue'
 import FavoritesView from '../components/user/FavoritesView.vue'
 import ProfileView from '../components/user/ProfileView.vue'
 import NewsView from '../components/user/NewsView.vue'
+import NewsDetailView from '../components/user/NewsDetailView.vue'
 import RankingsView from '../components/user/RankingsView.vue'
 import AthleteProfileView from '../components/user/AthleteProfileView.vue'
 import TopProductsView from '../components/user/TopProductsView.vue'
@@ -91,6 +92,12 @@ const routes = [
       },
       { path: 'favorites', name: 'favorites', component: FavoritesView, meta: { title: 'Yêu thích', titleKey: 'titles.favorites' } },
       { path: 'news', name: 'news', component: NewsView, meta: { title: 'Tin tức', titleKey: 'titles.news' } },
+      {
+        path: 'news/:id',
+        name: 'news-detail',
+        component: NewsDetailView,
+        meta: { fullBleed: true, title: 'Chi tiết tin', titleKey: 'titles.newsDetail' },
+      },
       {
         path: 'rankings',
         name: 'rankings',

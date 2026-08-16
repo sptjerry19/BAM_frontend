@@ -68,6 +68,7 @@ export default {
     checkoutConfirm: 'Order confirmation',
     favorites: 'Favorites',
     news: 'News',
+    newsDetail: 'Article',
     rankings: 'Rankings',
     athleteProfile: 'Athlete profile',
     topProducts: 'Top 10 products',
