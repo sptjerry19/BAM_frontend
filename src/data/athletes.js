@@ -1,4 +1,9 @@
 /** Mock athlete directory — UI only. */
+import { upload, uploadAt } from '../utils/uploads'
+
+function photos(...indexes) {
+  return indexes.map((i) => uploadAt(i))
+}
 
 export const ATHLETES = [
   {
@@ -16,25 +21,18 @@ export const ATHLETES = [
     style: 'Công thủ toàn diện',
     since: '2019',
     bio: 'VĐV phong trào hạng A. Thích smash góc và đôi nam. Luôn mở cho sparring cuối tuần.',
-    avatar: 'https://images.unsplash.com/photo-1566492031773-4f5e27234842?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&h=500&fit=crop',
+    avatar: upload(1),
+    cover: upload(2),
     followers: 1284,
     following: 186,
     friends: 342,
-    photos: [
-      'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop',
-    ],
+    photos: photos(2, 3, 4, 5, 6, 7),
     posts: [
       {
         id: 'p1',
         time: '2 giờ trước',
         text: 'Vừa khép lại giải nội bộ CLB — cảm ơn mọi người đã đến cổ vũ. Tuần sau sparring tối thứ Tư nhé!',
-        image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=900&h=600&fit=crop',
+        image: upload(2),
         likes: 86,
         comments: 12,
       },
@@ -67,17 +65,12 @@ export const ATHLETES = [
     style: 'Tấn công góc lưới',
     since: '2020',
     bio: 'Chuyên đôi nữ và hỗn hợp. Thích tempo nhanh và giao cầu ngắn.',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1600&h=500&fit=crop',
+    avatar: upload(3),
+    cover: upload(4),
     followers: 2104,
     following: 220,
     friends: 510,
-    photos: [
-      'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=400&fit=crop',
-    ],
+    photos: photos(5, 6, 2, 1),
     posts: [
       {
         id: 'p1',
@@ -107,22 +100,18 @@ export const ATHLETES = [
     style: 'Smash mạnh · phòng thủ sâu',
     since: '2018',
     bio: 'Tay trái hiếm. Tập trung đơn nam và sparring cường độ cao.',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=1600&h=500&fit=crop',
+    avatar: upload(5),
+    cover: upload(6),
     followers: 980,
     following: 140,
     friends: 276,
-    photos: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=400&fit=crop',
-    ],
+    photos: photos(7, 8, 0),
     posts: [
       {
         id: 'p1',
         time: '1 ngày trước',
         text: 'Trận phân hạng tối qua rất sát. Cảm ơn đối thủ đã cho trận hay.',
-        image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=900&h=600&fit=crop',
+        image: upload(7),
         likes: 64,
         comments: 9,
       },
@@ -146,15 +135,12 @@ export const ATHLETES = [
     style: 'Đôi · phối hợp giữa sân',
     since: '2021',
     bio: 'Chơi đôi là chính. Đang tìm partner ổn định cho mùa giải mới.',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=1600&h=500&fit=crop',
+    avatar: upload(7),
+    cover: upload(8),
     followers: 756,
     following: 198,
     friends: 401,
-    photos: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=400&h=400&fit=crop',
-    ],
+    photos: photos(3, 2),
     posts: [
       {
         id: 'p1',
@@ -183,15 +169,12 @@ export const ATHLETES = [
     style: 'Đơn · tốc độ',
     since: '2022',
     bio: 'Mới lên hạng A. Tập trung cải thiện clear và smash chéo.',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1600&h=500&fit=crop',
+    avatar: upload(9),
+    cover: upload(10),
     followers: 612,
     following: 95,
     friends: 188,
-    photos: [
-      'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop',
-    ],
+    photos: photos(0, 1),
     posts: [
       {
         id: 'p1',
@@ -220,8 +203,8 @@ export const ATHLETES = [
     style: 'Đôi nữ',
     since: '2020',
     bio: 'Ổn định ở top 10. Thích giải phong trào cuối tuần.',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=1600&h=500&fit=crop',
+    avatar: upload(2),
+    cover: upload(3),
     followers: 540,
     following: 160,
     friends: 290,
@@ -244,8 +227,8 @@ export const ATHLETES = [
     style: 'Đơn · phòng thủ',
     since: '2021',
     bio: 'West Lake regular. Đang leo bảng sau kỳ nghỉ chấn thương.',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1600&h=500&fit=crop',
+    avatar: upload(4),
+    cover: upload(5),
     followers: 410,
     following: 88,
     friends: 150,
@@ -268,8 +251,8 @@ export const ATHLETES = [
     style: 'Đôi nam',
     since: '2019',
     bio: 'Partner ổn định với Quang Huy ở một số giải nội bộ.',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1521412644189-f30363aaf9ea?w=1600&h=500&fit=crop',
+    avatar: upload(6),
+    cover: upload(7),
     followers: 388,
     following: 120,
     friends: 210,

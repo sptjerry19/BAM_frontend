@@ -7,6 +7,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
 import HomeBestsellers from './HomeBestsellers.vue'
+import { upload } from '../../utils/uploads'
 
 const router = useRouter()
 const reducedMotion =
@@ -17,7 +18,7 @@ const HERO_HOLD = 6000
 const heroShots = [
   {
     id: 'court',
-    src: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1920&h=1200&fit=crop',
+    src: upload(1),
     kicker: 'Đặt sân Hà Nội',
     title: 'Còn chỗ\ntrên sân.',
     cta: 'Đặt sân',
@@ -25,7 +26,7 @@ const heroShots = [
   },
   {
     id: 'rally',
-    src: 'https://images.unsplash.com/photo-1599586120429-48281b6f0ece?w=1920&h=1200&fit=crop',
+    src: upload(2),
     kicker: 'Trận tối nay',
     title: 'Một cú smash.\nMột khung giờ.',
     cta: 'Tìm sân',
@@ -33,7 +34,7 @@ const heroShots = [
   },
   {
     id: 'gear',
-    src: 'https://images.unsplash.com/photo-1613918431703-aa0c4d3c4a55?w=1920&h=1200&fit=crop',
+    src: upload(3),
     kicker: 'Cửa hàng',
     title: 'Trang bị\nchính hãng.',
     cta: 'Mua ngay',
@@ -48,7 +49,7 @@ const campaigns = [
   {
     id: 'c1',
     span: 'full',
-    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&h=900&fit=crop',
+    image: upload(4),
     kicker: 'Sân trong nhà',
     title: 'Đêm trong nhà',
     copy: 'Đèn vàng trên mặt sân. Giữ chỗ trước 30 phút — chắc suất cao điểm.',
@@ -58,7 +59,7 @@ const campaigns = [
   {
     id: 'c2',
     span: 'half',
-    image: 'https://images.unsplash.com/photo-1613918431703-aa0c4d3c4a55?w=1200&h=1400&fit=crop',
+    image: upload(5),
     kicker: 'Cửa hàng',
     title: 'Vợt trong tay',
     copy: 'Chính hãng, lọc theo trình độ, giao trong 48 giờ.',
@@ -68,7 +69,7 @@ const campaigns = [
   {
     id: 'c3',
     span: 'half',
-    image: 'https://images.unsplash.com/photo-1599586120429-48281b6f0ece?w=1200&h=1400&fit=crop',
+    image: upload(6),
     kicker: 'Trang bị',
     title: 'Túi đồ của bạn',
     copy: 'Lưu vợt đang dùng — sẵn sàng trước mỗi trận.',

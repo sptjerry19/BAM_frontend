@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
 import { getMember, attachMemberEquipment, detachMemberEquipment } from '../../api'
 import { levelColors, levelLabels } from '../../utils/labels'
+import { upload } from '../../utils/uploads'
 import { useAuth } from '../../composables/useAuth'
 import { useLocale } from '../../composables/useLocale'
 import Icon from '../common/Icon.vue'
@@ -186,7 +187,7 @@ async function loadMember() {
       id: authUser.value.member_id || `u_${authUser.value.id}`,
       name: authUser.value.name,
       email: authUser.value.email,
-      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(authUser.value.email || authUser.value.name)}`,
+      avatar: upload(1),
       level: 'beginner',
       points: 0,
       matches: 0,

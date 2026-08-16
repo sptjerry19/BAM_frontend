@@ -40,17 +40,18 @@ export function formatCurrency(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
 }
 
-export function productImageUrl(image, { w = 400, h = 300 } = {}) {
-  const crop = `w=${w}&h=${h}&fit=crop`
-  if (!image) return `https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?${crop}`
+/** Resolve product image URL as stored (S3 / CDN / relative). No campaign-image override. */
+export function productImageUrl(image) {
+  if (!image || typeof image !== 'string') return ''
   if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) return image
-  if (image.includes('/')) return image.startsWith('/') ? image : `/${image}`
-  return `https://images.unsplash.com/${image}?${crop}`
+  if (image.startsWith('/')) return image
+  if (image.includes('/')) return `/${image}`
+  return image
 }
 
 /** Prefer first of images[], then legacy image field. */
 export function productCoverUrl(product) {
-  if (!product) return productImageUrl(null)
+  if (!product) return ''
   const list = Array.isArray(product.images) ? product.images.filter(Boolean) : []
   return productImageUrl(list[0] || product.image)
 }

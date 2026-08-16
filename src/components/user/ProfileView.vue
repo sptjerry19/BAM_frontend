@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
 import Icon from '../common/Icon.vue'
 import { levelLabels, levelColors, formatCurrency } from '../../utils/labels'
+import { upload, uploadAt } from '../../utils/uploads'
 
 const router = useRouter()
 const user = inject('user')
@@ -16,15 +17,9 @@ const TABS = [
   { id: 'photos', label: 'Ảnh' },
 ]
 
-const coverUrl = computed(() => {
-  const seed = encodeURIComponent(user.value?.email || user.value?.name || 'jbam-member')
-  return `https://picsum.photos/seed/${seed}-cover/1600/520`
-})
+const coverUrl = computed(() => upload(8))
 
-const photoUrls = computed(() => {
-  const seed = encodeURIComponent(user.value?.id || user.value?.email || 'jbam')
-  return Array.from({ length: 9 }, (_, i) => `https://picsum.photos/seed/${seed}-p${i}/400/400`)
-})
+const photoUrls = computed(() => Array.from({ length: 9 }, (_, i) => uploadAt(i)))
 
 const losses = computed(() => Math.max(0, (user.value?.matches ?? 0) - (user.value?.wins ?? 0)))
 
@@ -53,7 +48,7 @@ const posts = computed(() => {
       id: 'p1',
       time: '2 giờ trước',
       text: `Vừa kết thúc buổi tập tại sân. Phong độ ${winRate.value}% thắng gần đây — ${first} đang lên guồng!`,
-      image: `https://picsum.photos/seed/${user.value.id || 'post1'}-a/900/520`,
+      image: upload(1),
       likes: 24 + (user.value.wins % 40),
       comments: 3 + (user.value.matches % 8),
     },
@@ -69,7 +64,7 @@ const posts = computed(() => {
       id: 'p3',
       time: '3 ngày trước',
       text: 'Check-in sân mới — mặt sàn ổn, ánh sáng đẹp. Recommend cho ae khu Cầu Giấy.',
-      image: `https://picsum.photos/seed/${user.value.id || 'post3'}-b/900/520`,
+      image: upload(3),
       likes: 41,
       comments: 12,
     },

@@ -188,159 +188,132 @@ async function remove(id) {
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+  <div class="admin-page">
+    <header class="admin-page__head admin-page__head--row">
       <div>
-        <h1 class="page-title">Sản phẩm</h1>
-        <p class="mt-1 text-sm" style="color: #64748b">{{ products.length }} sản phẩm</p>
+        <p class="eyebrow">Kho hàng</p>
+        <h1 class="page-title mt-2">Sản phẩm</h1>
+        <p class="lede mt-3">{{ products.length }} sản phẩm trong catalog</p>
       </div>
-      <motion.button
-        type="button"
-        class="btn-primary rounded-xl px-5 py-2.5 text-sm w-full sm:w-auto"
-        :whileHover="{ scale: 1.02 }"
-        :whileTap="{ scale: 0.97 }"
-        @click="openAdd"
-      >
-        + Thêm sản phẩm
-      </motion.button>
-    </div>
+      <button type="button" class="btn-primary rounded-xl px-5 py-3 text-[14px] font-semibold" @click="openAdd">
+        Thêm sản phẩm
+      </button>
+    </header>
 
-    <div class="flex flex-wrap gap-2 mb-6">
-      <motion.button
+    <div class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="Lọc danh mục">
+      <button
         v-for="cat in categoryOptions"
         :key="cat.value"
         type="button"
-        class="pill transition-all"
-        :style="
-          filterCategory === cat.value
-            ? { background: 'rgba(132,204,22,0.15)', color: '#84cc16', border: '1px solid rgba(132,204,22,0.3)' }
-            : { background: 'rgba(255,255,255,0.04)', color: '#64748b', border: '1px solid rgba(255,255,255,0.08)' }
-        "
-        :whileTap="{ scale: 0.95 }"
+        role="tab"
+        class="admin-chip"
+        :class="{ 'is-active': filterCategory === cat.value }"
+        :aria-selected="filterCategory === cat.value"
         @click="filterCategory = cat.value"
       >
-        <span v-if="cat.value" class="mr-1">{{ catIcons[cat.value] }}</span>
+        <span v-if="cat.value" class="mr-1 opacity-70">{{ catIcons[cat.value] }}</span>
         {{ cat.value ? cat.label : 'Tất cả' }}
-      </motion.button>
+      </button>
     </div>
 
     <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-for="i in 6" :key="i" class="glass rounded-2xl h-72 shimmer" />
+      <div v-for="i in 6" :key="i" class="surface h-72 shimmer" />
     </div>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <motion.div
+      <motion.article
         v-for="(product, i) in filtered"
         :key="product.id"
-        class="glass rounded-2xl overflow-hidden group"
-        :initial="{ opacity: 0, y: 16 }"
+        class="surface overflow-hidden group"
+        :initial="{ opacity: 0, y: 14 }"
         :animate="{ opacity: 1, y: 0 }"
-        :transition="{ delay: i * 0.05, duration: 0.35 }"
-        :whileHover="{ y: -3 }"
+        :transition="{ delay: Math.min(i, 8) * 0.04, duration: 0.32 }"
       >
         <div class="relative">
           <img
             :src="productCoverUrl(product)"
             :alt="product.name"
-            class="w-full h-44 object-cover"
+            class="w-full h-48 object-cover"
           />
           <span
             v-if="(product.images || []).length > 1"
-            class="absolute bottom-3 right-3 pill mono text-[10px]"
-            style="background: rgba(0,0,0,0.55); color: var(--text)"
+            class="absolute bottom-3 right-3 admin-badge"
           >
             {{ product.images.length }} ảnh
           </span>
           <span
             v-if="discountPct(product) > 0"
-            class="absolute top-3 left-3 pill mono"
-            style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)"
+            class="absolute top-3 left-3 admin-badge admin-badge--warn"
           >
             -{{ discountPct(product) }}%
           </span>
           <span
             v-if="product.featured"
-            class="absolute top-3 right-3 pill"
-            style="background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.3)"
+            class="absolute top-3 right-3 admin-badge"
           >
-            Hot
+            Nổi bật
           </span>
         </div>
         <div class="p-4">
-          <div class="flex items-center gap-2 mb-1">
-            <span>{{ catIcons[product.category] }}</span>
-            <span class="text-xs" style="color: #64748b">
-              {{ product.brand }} · {{ categoryLabels[product.category] }}
-            </span>
+          <div class="text-[12px] mb-1" style="color: var(--text-3)">
+            {{ product.brand }} · {{ categoryLabels[product.category] }}
           </div>
-          <div class="font-medium truncate mb-2" style="color: var(--text)">{{ product.name }}</div>
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="font-bold mono" style="color: #84cc16">{{ formatCurrency(product.price) }}</span>
+          <div class="font-semibold truncate text-[15px]">{{ product.name }}</div>
+          <div class="flex items-center justify-between mt-2 gap-2">
+            <div class="min-w-0">
+              <span class="font-heading font-bold mono text-[15px]">{{ formatCurrency(product.price) }}</span>
               <span
                 v-if="product.original_price && product.original_price > product.price"
-                class="text-xs line-through ml-2 mono"
-                style="color: #64748b"
+                class="text-[12px] line-through ml-2 mono"
+                style="color: var(--text-3)"
               >
                 {{ formatCurrency(product.original_price) }}
               </span>
             </div>
             <Stars :rating="product.rating" />
           </div>
-          <div class="flex items-center justify-between mt-3">
+          <div class="flex items-center justify-between mt-4 gap-2">
             <span
-              class="pill mono"
-              :style="{
-                background: product.stock > 0 ? 'rgba(132,204,22,0.12)' : 'rgba(239,68,68,0.12)',
-                color: product.stock > 0 ? '#84cc16' : '#ef4444',
-                border: `1px solid ${product.stock > 0 ? 'rgba(132,204,22,0.3)' : 'rgba(239,68,68,0.3)'}`,
-              }"
+              class="admin-badge"
+              :class="product.stock > 0 ? '' : 'admin-badge--danger'"
             >
               Kho: {{ product.stock }}
             </span>
             <div class="flex gap-2">
-              <motion.button
-                type="button"
-                class="btn-ghost text-xs py-1.5 px-3 rounded-lg"
-                :whileTap="{ scale: 0.95 }"
-                @click="openEdit(product)"
-              >
+              <button type="button" class="btn-ghost text-[12px] py-2 px-3 rounded-xl font-semibold" @click="openEdit(product)">
                 Sửa
-              </motion.button>
-              <motion.button
+              </button>
+              <button
                 type="button"
-                class="btn-ghost text-xs py-1.5 px-3 rounded-lg"
+                class="btn-ghost text-[12px] py-2 px-3 rounded-xl font-semibold"
                 style="color: #ef4444"
-                :whileTap="{ scale: 0.95 }"
                 @click="remove(product.id)"
               >
                 Xóa
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
-      </motion.div>
+      </motion.article>
     </div>
 
     <AnimatePresence>
       <Modal v-if="showModal" :title="editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'" @close="showModal = false">
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           <div>
-            <div class="uppercase tracking-wider font-semibold text-[11px] mb-1.5" style="color: #64748b">
-              Hình ảnh * (tối đa 12)
-            </div>
+            <div class="admin-label mb-1.5">Hình ảnh * (tối đa 12)</div>
             <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
               <div
                 v-for="(item, idx) in previewItems"
                 :key="item.key"
                 class="relative aspect-square rounded-xl overflow-hidden"
-                style="border: 1px solid rgba(255,255,255,0.08)"
+                style="border: 1px solid var(--line)"
               >
                 <img :src="item.url" alt="" class="w-full h-full object-cover" />
                 <button
                   type="button"
                   class="absolute top-1 right-1 w-6 h-6 rounded-full text-xs"
-                  style="background: rgba(239,68,68,0.85); color: #fff"
+                  style="background: rgba(239,68,68,0.9); color: #fff"
                   @click="removePreview(item, idx)"
                 >
                   ✕
@@ -349,14 +322,14 @@ async function remove(id) {
               <label
                 v-if="previewItems.length < 12"
                 class="aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer"
-                style="border: 1px dashed rgba(255,255,255,0.15); background: rgba(255,255,255,0.03)"
+                style="border: 1px dashed var(--line); background: var(--bg-2)"
               >
-                <span class="text-lg" style="color: #84cc16">+</span>
-                <span class="text-[10px] mt-1" style="color: #64748b">Thêm ảnh</span>
+                <span class="text-lg font-bold">+</span>
+                <span class="text-[10px] mt-1" style="color: var(--text-3)">Thêm ảnh</span>
                 <input type="file" accept="image/*" multiple class="hidden" @change="onPickImages" />
               </label>
             </div>
-            <p class="text-[11px]" style="color: #475569">Ảnh được upload lên S3. Ảnh đầu tiên là ảnh bìa.</p>
+            <p class="text-[11px]" style="color: var(--text-3)">Ảnh đầu tiên là ảnh bìa.</p>
           </div>
 
           <FormField v-model="form.name" label="Tên sản phẩm" />
@@ -372,31 +345,29 @@ async function remove(id) {
           </div>
           <FormField v-model="form.description" label="Mô tả" type="textarea" />
 
-          <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: #94a3b8">
+          <label class="flex items-center gap-2 text-[14px] cursor-pointer" style="color: var(--text-2)">
             <input v-model="form.featured" type="checkbox" class="rounded" />
             Sản phẩm nổi bật
           </label>
 
-          <p v-if="formError" class="text-sm text-red-400">{{ formError }}</p>
+          <p v-if="formError" class="text-sm" style="color: #ef4444">{{ formError }}</p>
 
           <div class="flex gap-3 pt-2">
-            <motion.button
+            <button
               type="button"
-              class="btn-primary flex-1 rounded-xl py-2.5 text-sm disabled:opacity-50"
+              class="btn-primary flex-1 rounded-xl py-3 text-[14px] font-semibold disabled:opacity-50"
               :disabled="saving"
-              :whileTap="{ scale: 0.97 }"
               @click="save"
             >
               {{ saving ? 'Đang lưu...' : 'Lưu' }}
-            </motion.button>
-            <motion.button
+            </button>
+            <button
               type="button"
-              class="btn-ghost flex-1 rounded-xl py-2.5 text-sm"
-              :whileTap="{ scale: 0.97 }"
+              class="btn-ghost flex-1 rounded-xl py-3 text-[14px] font-semibold"
               @click="showModal = false"
             >
               Hủy
-            </motion.button>
+            </button>
           </div>
         </div>
       </Modal>
