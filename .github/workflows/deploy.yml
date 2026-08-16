@@ -23,7 +23,8 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: GIT_DEPLOY_KEY
-          script_stop: true
+          # script_stop breaks multi-line if/for; use set -e instead
+          script_stop: false
           script: |
             set -euo pipefail
             cd /home/ubuntu/BAM_frontend
@@ -37,42 +38,32 @@ jobs:
             chmod 600 "$HOME/.ssh/known_hosts"
             ssh-keyscan -t ed25519,rsa github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
 
-            # Prefer key already on EC2; optional secret GIT_DEPLOY_KEY as fallback.
-            # EC2_SSH_KEY is only for Actions→server, not for git@github.com.
             if [ -n "${GIT_DEPLOY_KEY:-}" ]; then
               printf '%s\n' "$GIT_DEPLOY_KEY" > "$HOME/.ssh/github_deploy"
               chmod 600 "$HOME/.ssh/github_deploy"
             fi
 
             DEPLOY_KEY=""
-            for candidate in \
-              "$HOME/.ssh/github_deploy_frontend" \
-              "$HOME/.ssh/github_deploy" \
-              "$HOME/.ssh/id_ed25519" \
-              "$HOME/.ssh/id_rsa"
-            do
-              if [ -f "$candidate" ]; then
-                DEPLOY_KEY="$candidate"
-                break
-              fi
-            done
+            [ -f "$HOME/.ssh/github_deploy_frontend" ] && DEPLOY_KEY="$HOME/.ssh/github_deploy_frontend" || true
+            [ -z "$DEPLOY_KEY" ] && [ -f "$HOME/.ssh/github_deploy" ] && DEPLOY_KEY="$HOME/.ssh/github_deploy" || true
+            [ -z "$DEPLOY_KEY" ] && [ -f "$HOME/.ssh/id_ed25519" ] && DEPLOY_KEY="$HOME/.ssh/id_ed25519" || true
+            [ -z "$DEPLOY_KEY" ] && [ -f "$HOME/.ssh/id_rsa" ] && DEPLOY_KEY="$HOME/.ssh/id_rsa" || true
 
             if [ -z "$DEPLOY_KEY" ]; then
-              echo "ERROR: no GitHub deploy key found under ~/.ssh/"
-              echo "Expected ~/.ssh/github_deploy_frontend (or set secret GIT_DEPLOY_KEY)"
+              echo "ERROR: no GitHub deploy key under ~/.ssh/ (want github_deploy_frontend)"
               exit 1
             fi
 
             chmod 600 "$DEPLOY_KEY"
-            export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
-            echo "==> Using deploy key: $DEPLOY_KEY"
+            export GIT_SSH_COMMAND="ssh -i ${DEPLOY_KEY} -o IdentitiesOnly=yes -o UserKnownHostsFile=${HOME}/.ssh/known_hosts"
+            echo "==> Using deploy key: ${DEPLOY_KEY}"
 
             echo "==> Pull latest"
             git remote -v
             git fetch origin
             DEFAULT_BRANCH="$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')"
             git checkout "$DEFAULT_BRANCH"
-            git reset --hard "origin/$DEFAULT_BRANCH"
+            git reset --hard "origin/${DEFAULT_BRANCH}"
 
             echo "==> Build & restart (HTTPS stack)"
             sudo docker compose up -d --build --remove-orphans
