@@ -1,5 +1,6 @@
 <script setup>
 import { useTheme } from '../../composables/useTheme'
+import { useLocale } from '../../composables/useLocale'
 import Icon from './Icon.vue'
 
 defineProps({
@@ -7,6 +8,7 @@ defineProps({
 })
 
 const { isDark, toggleTheme } = useTheme()
+const { t } = useLocale()
 
 function onToggle(event) {
   toggleTheme(event)
@@ -18,8 +20,8 @@ function onToggle(event) {
     type="button"
     class="icon-btn theme-toggle"
     :class="$props.class"
-    :aria-label="isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'"
-    :title="isDark ? 'Chế độ sáng' : 'Chế độ tối'"
+    :aria-label="isDark ? t('theme.toLight') : t('theme.toDark')"
+    :title="isDark ? t('theme.light') : t('theme.dark')"
     @click="onToggle"
   >
     <span class="theme-toggle__icon" :key="isDark ? 'sun' : 'moon'">

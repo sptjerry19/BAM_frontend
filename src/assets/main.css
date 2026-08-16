@@ -253,6 +253,41 @@ html.theme-vt body {
   animation: theme-icon-in 0.42s var(--ease-out);
 }
 
+.locale-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  height: 36px;
+}
+
+.locale-toggle__btn {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.locale-toggle__btn.is-active {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.locale-toggle__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 @keyframes theme-icon-in {
   from {
     opacity: 0;
