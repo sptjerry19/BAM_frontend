@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'motion-v'
 import { getMember, attachMemberEquipment, detachMemberEquipment } from '../../api'
 import { levelColors, levelLabels } from '../../utils/labels'
 import { useAuth } from '../../composables/useAuth'
+import { useLocale } from '../../composables/useLocale'
 import Icon from '../common/Icon.vue'
 import ThemeToggle from '../common/ThemeToggle.vue'
+import LocaleToggle from '../common/LocaleToggle.vue'
 import BookingModal from './BookingModal.vue'
 
 const CART_KEY = 'jb_cart'
@@ -24,6 +26,7 @@ function readJson(key, fallback) {
 const route = useRoute()
 const router = useRouter()
 const { user: authUser, isAuthenticated, logout } = useAuth()
+const { t } = useLocale()
 
 const user = ref(null)
 const cart = ref(readJson(CART_KEY, []))
@@ -32,30 +35,33 @@ const bookingCourt = ref(null)
 const menuOpen = ref(false)
 const accountOpen = ref(false)
 
-const publicNavItems = [
-  { name: 'home', label: 'Trang chủ', icon: 'home' },
-  { name: 'courts', label: 'Đặt sân', icon: 'court' },
-  { name: 'shop', label: 'Cửa hàng', icon: 'shuttlecock' },
-  { name: 'favorites', label: 'Yêu thích', icon: 'heart' },
-]
+const publicNavItems = computed(() => [
+  { name: 'home', label: t('nav.home'), icon: 'home' },
+  { name: 'courts', label: t('nav.courts'), icon: 'court' },
+  { name: 'shop', label: t('nav.shop'), icon: 'shuttlecock' },
+  { name: 'news', label: t('nav.news'), icon: 'news' },
+  { name: 'rankings', label: t('nav.rankings'), icon: 'trophy' },
+  { name: 'top-products', label: t('nav.topProducts'), icon: 'chart' },
+  { name: 'favorites', label: t('nav.favorites'), icon: 'heart' },
+])
 
-const accountNavItems = [
-  { name: 'equipment', label: 'Trang bị', icon: 'racket' },
-  { name: 'profile', label: 'Hồ sơ', icon: 'user' },
-]
+const accountNavItems = computed(() => [
+  { name: 'equipment', label: t('nav.equipment'), icon: 'racket' },
+  { name: 'profile', label: t('nav.profile'), icon: 'user' },
+])
 
 const navItems = computed(() =>
-  isAuthenticated.value ? [...publicNavItems, ...accountNavItems] : publicNavItems,
+  isAuthenticated.value ? [...publicNavItems.value, ...accountNavItems.value] : publicNavItems.value,
 )
 
 const bottomNavItems = computed(() => [
-  { name: 'home', label: 'Trang chủ', icon: 'home' },
-  { name: 'courts', label: 'Đặt sân', icon: 'court' },
-  { name: 'shop', label: 'Cửa hàng', icon: 'shuttlecock' },
-  { name: 'cart', label: 'Giỏ hàng', icon: 'bag' },
+  { name: 'home', label: t('nav.home'), icon: 'home' },
+  { name: 'courts', label: t('nav.courts'), icon: 'court' },
+  { name: 'shop', label: t('nav.shop'), icon: 'shuttlecock' },
+  { name: 'cart', label: t('nav.cart'), icon: 'bag' },
   ...(isAuthenticated.value
-    ? [{ name: 'profile', label: 'Hồ sơ', icon: 'user' }]
-    : [{ name: 'favorites', label: 'Yêu thích', icon: 'heart' }]),
+    ? [{ name: 'profile', label: t('nav.profile'), icon: 'user' }]
+    : [{ name: 'favorites', label: t('nav.favorites'), icon: 'heart' }]),
 ])
 
 const year = new Date().getFullYear()
@@ -250,19 +256,20 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-[100dvh]" style="background: var(--bg)">
-    <a class="skip-link" href="#main">Bỏ qua tới nội dung</a>
+    <a class="skip-link" href="#main">{{ t('skipToContent') }}</a>
 
-    <div class="pre-nav" aria-label="Liên kết phụ">
+    <div class="pre-nav" :aria-label="t('nav.secondaryLinks')">
       <div class="shell pre-nav__inner">
-        <a href="#main">Tìm sân</a>
-        <a href="#main">Hỗ trợ</a>
+        <a href="#main">{{ t('nav.findCourt') }}</a>
+        <a href="#main">{{ t('nav.support') }}</a>
         <RouterLink
           v-if="!isAuthenticated"
           :to="{ name: 'login', query: { redirect: route.fullPath } }"
         >
-          Đăng nhập
+          {{ t('nav.login') }}
         </RouterLink>
-        <RouterLink v-else :to="{ name: 'profile' }">Tài khoản</RouterLink>
+        <RouterLink v-else :to="{ name: 'profile' }">{{ t('nav.account') }}</RouterLink>
+        <LocaleToggle />
         <ThemeToggle />
       </div>
     </div>
@@ -272,7 +279,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="icon-btn md:hidden border-0 bg-transparent"
-          aria-label="Mở menu"
+          :aria-label="t('nav.openMenu')"
           @click.stop="menuOpen = true"
         >
           <Icon name="menu" :size="22" />
@@ -281,14 +288,14 @@ onUnmounted(() => {
         <RouterLink
           :to="{ name: 'home' }"
           class="shrink-0"
-          aria-label="Về trang chủ JBadminton"
+          :aria-label="t('nav.homeAria')"
         >
           <span class="font-heading text-[22px] md:text-[24px] font-bold tracking-tight">
             JBadminton
           </span>
         </RouterLink>
 
-        <nav class="hidden md:flex items-center gap-8 ml-8" aria-label="Điều hướng chính">
+        <nav class="hidden md:flex items-center gap-8 ml-8" :aria-label="t('nav.mainNav')">
           <RouterLink
             v-for="item in navItems.filter((n) => n.name !== 'home')"
             :key="item.name"
@@ -308,14 +315,15 @@ onUnmounted(() => {
 
         <div class="flex-1" />
 
-        <div class="md:hidden">
+        <div class="md:hidden flex items-center gap-2">
+          <LocaleToggle />
           <ThemeToggle />
         </div>
 
         <RouterLink
           :to="{ name: 'favorites' }"
           class="icon-btn border-0 bg-transparent"
-          :aria-label="`Yêu thích, ${favorites.length} mục`"
+          :aria-label="t('nav.favoritesAria', { n: favorites.length })"
         >
           <Icon name="heart" :size="20" />
           <span v-if="favorites.length" class="count-badge">{{ favorites.length }}</span>
@@ -324,7 +332,7 @@ onUnmounted(() => {
         <RouterLink
           :to="{ name: 'cart' }"
           class="icon-btn border-0 bg-transparent"
-          :aria-label="`Giỏ hàng, ${cartCount} sản phẩm`"
+          :aria-label="t('nav.cartAria', { n: cartCount })"
         >
           <Icon name="bag" :size="20" />
           <motion.span
@@ -391,7 +399,7 @@ onUnmounted(() => {
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 <Icon name="racket" :size="17" />
-                Trang bị
+                {{ t('nav.equipment') }}
               </RouterLink>
               <RouterLink
                 :to="{ name: 'favorites' }"
@@ -399,7 +407,7 @@ onUnmounted(() => {
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
               >
                 <Icon name="heart" :size="17" />
-                Yêu thích
+                {{ t('nav.favorites') }}
               </RouterLink>
               <button
                 type="button"
@@ -409,7 +417,7 @@ onUnmounted(() => {
                 @click="onLogout"
               >
                 <Icon name="logout" :size="17" />
-                Đăng xuất
+                {{ t('nav.logout') }}
               </button>
             </motion.div>
           </AnimatePresence>
@@ -455,19 +463,19 @@ onUnmounted(() => {
           </div>
           <div v-else class="min-w-0">
             <div class="font-heading font-bold text-sm">Chào bạn</div>
-            <div class="text-xs mt-1" style="color: var(--text-3)">Đăng nhập để đặt sân và mua hàng</div>
+            <div class="text-xs mt-1" style="color: var(--text-3)">{{ t('nav.loginHint') }}</div>
           </div>
           <button
             type="button"
             class="icon-btn shrink-0"
-            aria-label="Đóng menu"
+            :aria-label="t('nav.closeMenu')"
             @click="menuOpen = false"
           >
             <Icon name="close" :size="18" />
           </button>
         </div>
 
-        <nav class="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Điều hướng di động">
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto" :aria-label="t('nav.mobileNav')">
           <RouterLink
             v-for="item in navItems"
             :key="item.name"
@@ -488,7 +496,7 @@ onUnmounted(() => {
             @click="onLogout"
           >
             <Icon name="logout" :size="17" />
-            Đăng xuất
+            {{ t('nav.logout') }}
           </button>
           <RouterLink
             v-else
@@ -496,7 +504,7 @@ onUnmounted(() => {
             class="btn-primary w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-2xl text-sm"
             @click="menuOpen = false"
           >
-            Đăng nhập
+            {{ t('nav.login') }}
           </RouterLink>
         </div>
       </motion.aside>
@@ -523,42 +531,43 @@ onUnmounted(() => {
 
     <footer class="site-footer">
       <div class="shell site-footer__grid">
-        <nav aria-label="Mua sắm">
-          <h2>Mua sắm</h2>
+        <nav :aria-label="t('footer.shop')">
+          <h2>{{ t('footer.shop') }}</h2>
           <ul>
-            <li><RouterLink :to="{ name: 'courts' }">Đặt sân</RouterLink></li>
-            <li><RouterLink :to="{ name: 'shop' }">Cửa hàng</RouterLink></li>
-            <li><RouterLink :to="{ name: 'favorites' }">Yêu thích</RouterLink></li>
-            <li><RouterLink :to="{ name: 'cart' }">Giỏ hàng</RouterLink></li>
+            <li><RouterLink :to="{ name: 'courts' }">{{ t('footer.bookCourt') }}</RouterLink></li>
+            <li><RouterLink :to="{ name: 'shop' }">{{ t('footer.store') }}</RouterLink></li>
+            <li><RouterLink :to="{ name: 'top-products' }">{{ t('footer.top10') }}</RouterLink></li>
+            <li><RouterLink :to="{ name: 'favorites' }">{{ t('footer.favorites') }}</RouterLink></li>
+            <li><RouterLink :to="{ name: 'cart' }">{{ t('footer.cart') }}</RouterLink></li>
           </ul>
         </nav>
-        <nav aria-label="Tài khoản">
-          <h2>Tài khoản</h2>
+        <nav :aria-label="t('footer.account')">
+          <h2>{{ t('footer.account') }}</h2>
           <ul>
             <li>
               <RouterLink
                 :to="isAuthenticated ? { name: 'profile' } : { name: 'login' }"
               >
-                {{ isAuthenticated ? 'Hồ sơ' : 'Đăng nhập' }}
+                {{ isAuthenticated ? t('footer.profile') : t('footer.login') }}
               </RouterLink>
             </li>
-            <li><RouterLink :to="{ name: 'equipment' }">Trang bị</RouterLink></li>
-            <li><a href="#main">Đơn hàng</a></li>
+            <li><RouterLink :to="{ name: 'equipment' }">{{ t('footer.equipment') }}</RouterLink></li>
+            <li><a href="#main">{{ t('footer.orders') }}</a></li>
           </ul>
         </nav>
-        <nav aria-label="Hỗ trợ">
-          <h2>Hỗ trợ</h2>
+        <nav :aria-label="t('footer.community')">
+          <h2>{{ t('footer.community') }}</h2>
           <ul>
-            <li><a href="#main">Liên hệ</a></li>
-            <li><a href="#main">Đổi trả</a></li>
-            <li><a href="#main">Chính sách</a></li>
-            <li><a href="#main">Điều khoản</a></li>
+            <li><RouterLink :to="{ name: 'news' }">{{ t('footer.news') }}</RouterLink></li>
+            <li><RouterLink :to="{ name: 'rankings' }">{{ t('footer.rankings') }}</RouterLink></li>
+            <li><a href="#main">{{ t('footer.contact') }}</a></li>
+            <li><a href="#main">{{ t('footer.policy') }}</a></li>
           </ul>
         </nav>
         <div>
           <h2>JBadminton</h2>
           <p>
-            Đặt sân theo giờ tại Hà Nội và mua trang bị chính hãng — một nơi.
+            {{ t('footer.blurb') }}
           </p>
           <p class="site-footer__phone">024 7109 4482 · 6:00–22:30</p>
         </div>
@@ -572,7 +581,7 @@ onUnmounted(() => {
     <nav
       class="md:hidden fixed bottom-0 inset-x-0 bottom-nav-blur pb-safe"
       style="z-index: var(--z-sticky)"
-      aria-label="Điều hướng dưới"
+      :aria-label="t('nav.bottomNav')"
     >
       <div class="flex px-1.5 pt-2">
         <RouterLink

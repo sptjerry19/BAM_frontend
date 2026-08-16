@@ -1,7 +1,8 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
-import { getProducts, createOrder } from '../../api'
+import { getProducts } from '../../api'
 import Icon from '../common/Icon.vue'
 import { formatCurrency, productCoverUrl } from '../../utils/labels'
 
@@ -9,15 +10,11 @@ const user = inject('user')
 const cart = inject('cart')
 const setCart = inject('setCart')
 const goToShop = inject('goToShop', null)
-const requireAuth = inject('requireAuth', null)
+const router = useRouter()
 
 const emit = defineEmits(['continue-shopping'])
 
 const products = ref([])
-const ordered = ref(false)
-const checkingOut = ref(false)
-const orderResult = ref(null)
-const checkoutError = ref('')
 
 const cartProducts = computed(() =>
   cart.value
@@ -64,71 +61,19 @@ function removeItem(productId) {
   setCart(cart.value.filter((i) => i.productId !== productId))
 }
 
-async function checkout() {
+function goCheckout() {
   if (!cartProducts.value.length) return
-  if (requireAuth && !requireAuth('/cart')) return
-  if (!user.value?.id) {
-    checkoutError.value = 'Vui lòng đăng nhập để đặt hàng.'
-    return
-  }
-  checkingOut.value = true
-  checkoutError.value = ''
-  try {
-    orderResult.value = await createOrder({
-      member_id: user.value.id,
-      status: 'paid',
-      items: cartProducts.value.map((i) => ({
-        product_id: i.productId,
-        qty: i.qty,
-        price: i.product.price,
-      })),
-    })
-    setCart([])
-    ordered.value = true
-  } catch {
-    checkoutError.value = 'Chúng tôi chưa gửi được đơn hàng. Vui lòng thử lại sau ít phút.'
-  } finally {
-    checkingOut.value = false
-  }
+  router.push({ name: 'checkout-info' })
 }
 
 function backToShop() {
-  ordered.value = false
   if (goToShop) goToShop()
   else emit('continue-shopping')
 }
 </script>
 
 <template>
-  <!-- Order confirmed -->
-  <section v-if="ordered" class="max-w-lg mx-auto text-center py-10">
-    <motion.span
-      class="w-16 h-16 rounded-3xl mx-auto flex items-center justify-center"
-      style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line)"
-      :initial="{ scale: 0.6, opacity: 0 }"
-      :animate="{ scale: 1, opacity: 1 }"
-      :transition="{ type: 'spring', stiffness: 320, damping: 20 }"
-    >
-      <Icon name="check" :size="30" :stroke="2.2" />
-    </motion.span>
-
-    <h1 class="page-title mt-6">Đơn hàng đã được ghi nhận</h1>
-    <p class="lede mx-auto mt-3">
-      Chúng tôi đang đóng gói và sẽ giao trong 48 giờ. Mã đơn và thông tin vận chuyển
-      được gửi tới email của bạn.
-    </p>
-
-    <p v-if="orderResult?.id" class="mono mt-5 text-[13px]" style="color: var(--text-3)">
-      Mã đơn: {{ orderResult.id }}
-    </p>
-
-    <button type="button" class="btn-primary px-7 py-3.5 rounded-2xl text-[15px] mt-8" @click="backToShop">
-      Tiếp tục mua sắm
-    </button>
-  </section>
-
-  <!-- Empty -->
-  <section v-else-if="cartProducts.length === 0" class="max-w-lg mx-auto text-center py-10">
+  <section v-if="cartProducts.length === 0" class="max-w-lg mx-auto text-center py-10">
     <span
       class="w-16 h-16 rounded-3xl mx-auto flex items-center justify-center"
       style="background: rgba(255,255,255,0.04); color: var(--text-2); border: 1px solid var(--line)"
@@ -144,7 +89,6 @@ function backToShop() {
     </button>
   </section>
 
-  <!-- Cart -->
   <div v-else>
     <header>
       <h1 class="page-title">Giỏ hàng</h1>
@@ -251,24 +195,14 @@ function backToShop() {
           </span>
         </div>
 
-        <p
-          v-if="checkoutError"
-          class="mt-4 px-3.5 py-3 rounded-xl text-[13px]"
-          style="background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5"
-          role="alert"
-        >
-          {{ checkoutError }}
-        </p>
-
         <motion.button
           type="button"
-          class="w-full mt-5 py-3.5 rounded-2xl btn-primary text-[15px] flex items-center justify-center gap-2 disabled:opacity-50"
-          :disabled="checkingOut"
+          class="w-full mt-5 py-3.5 rounded-2xl btn-primary text-[15px] flex items-center justify-center gap-2"
           :while-tap="{ scale: 0.985 }"
-          @click="checkout"
+          @click="goCheckout"
         >
-          {{ checkingOut ? 'Đang xử lý' : 'Đặt hàng' }}
-          <Icon v-if="!checkingOut" name="arrowRight" :size="17" />
+          Đặt hàng
+          <Icon name="arrowRight" :size="17" />
         </motion.button>
 
         <button type="button" class="btn-text mt-4 mx-auto" @click="backToShop">

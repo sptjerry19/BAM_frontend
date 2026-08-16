@@ -1,18 +1,28 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
 import { useAuth } from './composables/useAuth'
+import { useLocale } from './composables/useLocale'
 import SiteIntro from './components/common/SiteIntro.vue'
 
 const route = useRoute()
 const { bootstrapped } = useAuth()
+const { locale, t } = useLocale()
 
 /**
  * Keying on the top-level matched record keeps a layout mounted while its child
  * routes change, so only whole-section switches (auth <-> app) cross-fade.
  */
 const sectionKey = computed(() => route.matched[0]?.path ?? route.path)
+
+watch(
+  locale,
+  () => {
+    const title = route.meta.titleKey ? t(route.meta.titleKey) : route.meta.title
+    document.title = title ? `${title} — JBadminton` : 'JBadminton'
+  },
+)
 </script>
 
 <template>

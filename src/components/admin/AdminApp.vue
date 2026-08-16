@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
 import { useAuth } from '../../composables/useAuth'
 import ThemeToggle from '../common/ThemeToggle.vue'
+import LocaleToggle from '../common/LocaleToggle.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -104,9 +105,12 @@ onUnmounted(() => {
       </nav>
 
       <div class="p-3 space-y-1" style="border-top: 1px solid var(--line)">
-        <div class="px-4 py-2 flex items-center justify-between">
+        <div class="px-4 py-2 flex items-center justify-between gap-2">
           <span class="text-xs" style="color: var(--text-3)">Giao diện</span>
-          <ThemeToggle />
+          <div class="flex items-center gap-2">
+            <LocaleToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <button
           type="button"
@@ -211,6 +215,7 @@ onUnmounted(() => {
           </div>
           <div class="text-[11px] truncate" style="color: var(--text-3)">Admin · Badminton Manager</div>
         </div>
+        <LocaleToggle />
         <ThemeToggle />
         <button
           type="button"
