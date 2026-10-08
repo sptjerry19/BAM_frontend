@@ -1,32 +1,99 @@
 <script setup>
 /**
- * News article detail — editorial UI only (mock data).
+ * News article detail — data from /api/news/:id
  */
-import { computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { motion } from 'motion-v'
 import Icon from '../common/Icon.vue'
-import { getNewsById, getRelatedNews } from '../../data/news'
+import { getNewsItem, getNewsList } from '../../api'
+import {
+  formatNewsDate,
+  formatReadTime,
+  articleHtml,
+  articleHeadings,
+  articleTag,
+  articleAuthor,
+} from '../../data/news'
 
 const route = useRoute()
 const router = useRouter()
 
-const article = computed(() => getNewsById(route.params.id))
-const related = computed(() => (article.value ? getRelatedNews(article.value.id, 3) : []))
+const article = ref(null)
+const related = ref([])
+const loading = ref(true)
+const loadError = ref('')
+
+const html = computed(() => articleHtml(article.value))
+const headings = computed(() => articleHeadings(html.value))
+const author = computed(() => articleAuthor(article.value))
+const metaLine = computed(() => {
+  if (!article.value) return ''
+  return [
+    articleTag(article.value),
+    formatNewsDate(article.value.date),
+    formatReadTime(article.value.read) ? `${formatReadTime(article.value.read)} đọc` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+})
+
+async function loadRelated(item) {
+  try {
+    const params = { per_page: 6 }
+    if (item.category_id) params.category_id = item.category_id
+    const res = await getNewsList(params)
+    related.value = res.data.filter((n) => String(n.id) !== String(item.id)).slice(0, 3)
+  } catch {
+    related.value = []
+  }
+}
+
+async function loadArticle(id) {
+  loading.value = true
+  loadError.value = ''
+  article.value = null
+  related.value = []
+  try {
+    const data = await getNewsItem(id)
+    article.value = data
+    document.title = data?.title ? `${data.title} — JBadminton` : 'Tin tức — JBadminton'
+    await loadRelated(data)
+  } catch {
+    article.value = null
+    loadError.value = 'Không tìm thấy bài viết'
+    document.title = 'Tin tức — JBadminton'
+  } finally {
+    loading.value = false
+  }
+}
 
 watch(
-  article,
-  (a) => {
-    document.title = a?.title ? `${a.title} — JBadminton` : 'Tin tức — JBadminton'
+  () => route.params.id,
+  (id) => {
+    if (id) loadArticle(id)
   },
-  { immediate: true },
 )
+
+onMounted(() => {
+  if (route.params.id) loadArticle(route.params.id)
+})
 </script>
 
 <template>
-  <div v-if="!article" class="shell py-16 text-center">
+  <div v-if="loading" class="pb-16">
+    <div class="skeleton min-h-[52vw] sm:min-h-[420px] md:min-h-[520px]" />
+    <div class="shell mt-10 max-w-[68ch] space-y-4">
+      <div class="skeleton h-4 w-1/4" />
+      <div class="skeleton h-8 w-3/4" />
+      <div class="skeleton h-24 w-full" />
+      <div class="skeleton h-24 w-full" />
+    </div>
+  </div>
+
+  <div v-else-if="!article" class="shell py-16 text-center">
     <p class="eyebrow">Tin tức</p>
-    <h1 class="page-title mt-2">Không tìm thấy bài viết</h1>
+    <h1 class="page-title mt-2">{{ loadError || 'Không tìm thấy bài viết' }}</h1>
     <p class="lede mt-3 mx-auto">Bài có thể đã gỡ hoặc đường dẫn không còn đúng.</p>
     <button
       type="button"
@@ -38,7 +105,6 @@ watch(
   </div>
 
   <article v-else class="pb-16">
-    <!-- Hero -->
     <header class="relative overflow-hidden min-h-[52vw] sm:min-h-[420px] md:min-h-[520px] flex items-end">
       <img
         :src="article.image"
@@ -62,7 +128,7 @@ watch(
         </RouterLink>
 
         <p class="mt-6 text-[11px] uppercase tracking-[0.16em] opacity-80">
-          {{ article.tag }} · {{ article.date }} · {{ article.read }} đọc
+          {{ metaLine }}
         </p>
 
         <motion.h1
@@ -74,20 +140,28 @@ watch(
           {{ article.title }}
         </motion.h1>
 
-        <p class="mt-5 max-w-xl text-[15px] sm:text-[16.5px] leading-relaxed opacity-90">
+        <p v-if="article.excerpt" class="mt-5 max-w-xl text-[15px] sm:text-[16.5px] leading-relaxed opacity-90">
           {{ article.excerpt }}
         </p>
 
-        <div class="mt-8 flex items-center gap-3">
+        <div v-if="author" class="mt-8 flex items-center gap-3">
           <img
-            :src="article.author.avatar"
-            :alt="article.author.name"
+            v-if="author.avatar"
+            :src="author.avatar"
+            :alt="author.name"
             class="w-11 h-11 rounded-full object-cover"
             style="border: 2px solid rgba(255,255,255,0.35)"
           />
+          <span
+            v-else
+            class="w-11 h-11 rounded-full flex items-center justify-center text-[13px] font-semibold"
+            style="background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.35)"
+          >
+            {{ author.name.slice(0, 1) }}
+          </span>
           <div>
-            <div class="text-[14px] font-semibold leading-tight">{{ article.author.name }}</div>
-            <div class="text-[12px] opacity-75 mt-0.5">{{ article.author.role }}</div>
+            <div class="text-[14px] font-semibold leading-tight">{{ author.name }}</div>
+            <div class="text-[12px] opacity-75 mt-0.5">{{ author.role }}</div>
           </div>
         </div>
       </div>
@@ -95,39 +169,28 @@ watch(
 
     <div class="shell">
       <p
-        v-if="article.coverCaption"
+        v-if="article.cover_caption"
         class="mt-3 text-[12px]"
         style="color: var(--text-3)"
       >
-        {{ article.coverCaption }}
+        {{ article.cover_caption }}
       </p>
 
-      <!-- Body + aside -->
       <div class="mt-10 lg:mt-14 grid gap-12 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-16 items-start">
-        <div class="news-prose">
-          <template v-for="(block, i) in article.body" :key="i">
-            <p v-if="block.type === 'p'" class="news-p">{{ block.text }}</p>
-
-            <h2 v-else-if="block.type === 'h2'" class="news-h2">{{ block.text }}</h2>
-
-            <figure v-else-if="block.type === 'quote'" class="news-quote">
-              <blockquote>{{ block.text }}</blockquote>
-              <figcaption v-if="block.cite">— {{ block.cite }}</figcaption>
-            </figure>
-
-            <figure v-else-if="block.type === 'image'" class="news-figure">
-              <img :src="block.src" :alt="block.alt || ''" loading="lazy" />
-              <figcaption v-if="block.caption">{{ block.caption }}</figcaption>
-            </figure>
-          </template>
+        <div>
+          <div class="news-prose max-w-[68ch]" v-html="html" />
 
           <div
             class="mt-12 pt-8 flex flex-wrap items-center justify-between gap-4"
             style="border-top: 1px solid var(--line)"
           >
             <div class="flex flex-wrap gap-2">
-              <span class="chip text-[12px] py-1.5 px-3">{{ article.tag }}</span>
-              <span class="chip text-[12px] py-1.5 px-3">{{ article.date }}</span>
+              <span v-if="articleTag(article)" class="chip text-[12px] py-1.5 px-3">
+                {{ articleTag(article) }}
+              </span>
+              <span v-if="article.date" class="chip text-[12px] py-1.5 px-3">
+                {{ formatNewsDate(article.date) }}
+              </span>
             </div>
             <button type="button" class="btn-text text-[13px]" disabled title="Sắp có">
               Chia sẻ bài viết
@@ -143,37 +206,45 @@ watch(
             </p>
             <ul class="mt-3 space-y-2.5">
               <li
-                v-for="(block, i) in article.body.filter((b) => b.type === 'h2')"
+                v-for="(heading, i) in headings"
                 :key="i"
                 class="text-[13.5px] leading-snug"
                 style="color: var(--text-2)"
               >
-                {{ block.text }}
+                {{ heading }}
               </li>
               <li
-                v-if="article.body.filter((b) => b.type === 'h2').length === 0"
+                v-if="headings.length === 0"
                 class="text-[13.5px]"
                 style="color: var(--text-3)"
               >
-                Bài viết ngắn — đọc hết trong {{ article.read }}.
+                {{ formatReadTime(article.read) ? `Bài viết ngắn — đọc hết trong ${formatReadTime(article.read)}.` : 'Đọc toàn bài bên trái.' }}
               </li>
             </ul>
           </div>
 
-          <div style="border-top: 1px solid var(--line)" class="pt-6">
+          <div v-if="author" style="border-top: 1px solid var(--line)" class="pt-6">
             <p class="text-[11px] uppercase tracking-[0.14em]" style="color: var(--text-3)">
               Tác giả
             </p>
             <div class="flex items-center gap-3 mt-3">
               <img
-                :src="article.author.avatar"
-                :alt="article.author.name"
+                v-if="author.avatar"
+                :src="author.avatar"
+                :alt="author.name"
                 class="w-12 h-12 rounded-full object-cover"
               />
+              <span
+                v-else
+                class="w-12 h-12 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0"
+                style="background: var(--bg-2); border: 1px solid var(--line)"
+              >
+                {{ author.name.slice(0, 1) }}
+              </span>
               <div class="min-w-0">
-                <div class="font-semibold text-[14px]">{{ article.author.name }}</div>
+                <div class="font-semibold text-[14px]">{{ author.name }}</div>
                 <div class="text-[12px] mt-0.5" style="color: var(--text-3)">
-                  {{ article.author.role }}
+                  {{ author.role }}
                 </div>
               </div>
             </div>
@@ -181,8 +252,7 @@ watch(
         </aside>
       </div>
 
-      <!-- Related -->
-      <section class="mt-16 sm:mt-20" aria-labelledby="related-news">
+      <section v-if="related.length" class="mt-16 sm:mt-20" aria-labelledby="related-news">
         <div class="flex items-end justify-between gap-4 mb-6">
           <div>
             <p class="eyebrow">Tiếp theo</p>
@@ -215,7 +285,8 @@ watch(
                 />
               </div>
               <p class="mt-3.5 text-[11px] uppercase tracking-[0.12em]" style="color: var(--text-3)">
-                {{ item.tag }} · {{ item.date }}
+                {{ articleTag(item) }}
+                <template v-if="item.date"> · {{ formatNewsDate(item.date) }}</template>
               </p>
               <h3
                 class="font-heading font-bold text-[17px] leading-snug mt-1.5 group-hover:underline underline-offset-4"
@@ -231,7 +302,7 @@ watch(
 </template>
 
 <style scoped>
-.news-p {
+.news-prose :deep(p) {
   margin-top: 1.25rem;
   font-size: 16.5px;
   line-height: 1.75;
@@ -239,11 +310,11 @@ watch(
   text-wrap: pretty;
 }
 
-.news-p:first-child {
+.news-prose :deep(p:first-child) {
   margin-top: 0;
 }
 
-.news-h2 {
+.news-prose :deep(h2) {
   margin-top: 2.25rem;
   margin-bottom: 0.35rem;
   font-family: var(--font-heading, inherit);
@@ -255,13 +326,10 @@ watch(
   text-wrap: balance;
 }
 
-.news-quote {
+.news-prose :deep(blockquote) {
   margin: 2rem 0;
   padding: 1.25rem 0 1.25rem 1.25rem;
   border-left: 3px solid var(--accent);
-}
-
-.news-quote blockquote {
   font-family: var(--font-heading, inherit);
   font-weight: 600;
   font-size: clamp(18px, 2.2vw, 22px);
@@ -270,26 +338,36 @@ watch(
   color: var(--text);
 }
 
-.news-quote figcaption {
-  margin-top: 0.75rem;
-  font-size: 12.5px;
-  color: var(--text-3);
+.news-prose :deep(blockquote p) {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
 }
 
-.news-figure {
-  margin: 2rem 0;
+.news-prose :deep(ul),
+.news-prose :deep(ol) {
+  margin: 1.25rem 0;
+  padding-left: 1.2rem;
+  color: var(--text-2);
+  font-size: 16.5px;
+  line-height: 1.75;
 }
 
-.news-figure img {
+.news-prose :deep(li) {
+  margin-top: 0.4rem;
+}
+
+.news-prose :deep(img) {
   width: 100%;
+  margin: 2rem 0;
   aspect-ratio: 16 / 10;
   object-fit: cover;
   border-radius: var(--r-md);
 }
 
-.news-figure figcaption {
-  margin-top: 0.65rem;
-  font-size: 12.5px;
-  color: var(--text-3);
+.news-prose :deep(strong) {
+  color: var(--text);
+  font-weight: 600;
 }
 </style>

@@ -61,6 +61,8 @@ export default {
   titles: {
     home: 'Trang chủ',
     courts: 'Đặt sân',
+    courtDetail: 'Chi tiết sân',
+    courtBookingCheckout: 'Thanh toán đặt sân',
     shop: 'Cửa hàng',
     productDetail: 'Chi tiết sản phẩm',
     cart: 'Giỏ hàng',

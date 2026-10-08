@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { motion } from 'motion-v'
+import { getAthleteProfile } from '../../api'
 import Icon from '../common/Icon.vue'
-import { getAthlete } from '../../data/athletes'
+import { levelLabels } from '../../utils/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,8 +18,8 @@ const TABS = [
 
 const tab = ref('posts')
 const following = ref(false)
-
-const athlete = computed(() => getAthlete(String(route.params.id)))
+const athlete = ref(null)
+const loading = ref(true)
 
 const winRate = computed(() => {
   const a = athlete.value
@@ -26,10 +27,47 @@ const winRate = computed(() => {
   const total = a.win + a.loss
   return total ? Math.round((a.win / total) * 100) : 0
 })
+
+async function load(id) {
+  loading.value = true
+  athlete.value = null
+  tab.value = 'posts'
+  try {
+    const data = await getAthleteProfile(id)
+    const level = levelLabels[data.level] || data.level || '—'
+    athlete.value = {
+      ...data,
+      rank: data.rank ?? '—',
+      style: data.style || level,
+      handed: data.handed || '—',
+      city: data.city || '—',
+      since: data.since || '—',
+      club: data.club || 'JBadminton',
+      cover: data.cover || data.avatar,
+      friends: data.friends ?? 0,
+      followers: data.followers ?? 0,
+      following: data.following ?? 0,
+      posts: data.posts ?? [],
+      photos: data.photos?.length ? data.photos : (data.avatar ? [data.avatar] : []),
+      achievements: data.achievements ?? [],
+      bio: data.bio || `${data.name} — ${level}. ${Number(data.points || 0).toLocaleString('vi-VN')} điểm, ${data.win} thắng và ${data.loss} thua.`,
+    }
+  } catch {
+    athlete.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(() => route.params.id, (id) => load(String(id || '')), { immediate: true })
 </script>
 
 <template>
-  <div v-if="!athlete" class="shell py-14 text-center">
+  <div v-if="loading" class="shell py-14 text-center">
+    <p class="lede">Đang tải hồ sơ…</p>
+  </div>
+
+  <div v-else-if="!athlete" class="shell py-14 text-center">
     <h1 class="page-title">Không tìm thấy vận động viên</h1>
     <button type="button" class="btn-primary mt-6 px-6 py-3 rounded-2xl" @click="router.push({ name: 'rankings' })">
       Về bảng xếp hạng

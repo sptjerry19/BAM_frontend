@@ -1,21 +1,37 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { getCourts } from '../../api'
+import { useRouter } from 'vue-router'
+import { getCourts, getCourtTop } from '../../api'
 import Stars from '../common/Stars.vue'
 import Icon from '../common/Icon.vue'
 import CourtMap from './CourtMap.vue'
 import { formatCurrency, productImageUrl } from '../../utils/labels'
 
 const emit = defineEmits(['book'])
+const router = useRouter()
 
 const goToShop = inject('goToShop', null)
-const openBooking = inject('openBooking', null)
+
+const PER_PAGE = 5
 
 const courts = ref([])
+const featured = ref([])
+const summary = ref({ total: 0, open: 0, court_count: 0, min_price: 0 })
 const selected = ref(null)
 const filter = ref('all')
 const loading = ref(true)
+const heroLoading = ref(true)
+const page = ref(1)
+const pagination = ref({
+  current_page: 1,
+  per_page: PER_PAGE,
+  total: 0,
+  last_page: 1,
+  from: 0,
+  to: 0,
+  has_more_pages: false,
+})
 
 const SLIDE_MS = 6000
 const heroIndex = ref(0)
@@ -30,19 +46,23 @@ const statusLabels = { all: 'Tất cả', open: 'Còn sân', busy: 'Đông khác
 const statusShort = { open: 'Còn sân', busy: 'Đông', closed: 'Đóng' }
 const filterKeys = ['all', 'open', 'busy', 'closed']
 
-const shown = computed(() =>
-  filter.value === 'all' ? courts.value : courts.value.filter((c) => c.status === filter.value),
-)
+const shown = computed(() => courts.value)
 
-const openCount = computed(() => courts.value.filter((c) => c.status === 'open').length)
-const totalCourts = computed(() => courts.value.reduce((sum, c) => sum + (c.courts || 0), 0))
-const lowestPrice = computed(() =>
-  courts.value.length ? Math.min(...courts.value.map((c) => c.price)) : 0,
-)
+const pageNumbers = computed(() => {
+  const last = pagination.value.last_page || 1
+  const current = pagination.value.current_page || 1
+  const windowSize = 5
+  let start = Math.max(1, current - Math.floor(windowSize / 2))
+  const end = Math.min(last, start + windowSize - 1)
+  start = Math.max(1, end - windowSize + 1)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
-/** Slides come from real courts so the hero doubles as a shortcut to booking. */
+/** Slides come from the top-rated courts, independent of the paged list. */
 const heroSlides = computed(() => {
-  const list = courts.value.slice(0, 5)
+  const list = featured.value.slice(0, 5)
   return list.length ? list : [{ id: 'intro', image: null }]
 })
 
@@ -51,7 +71,7 @@ const activeSlide = computed(
 )
 
 const activeCourt = computed(() =>
-  courts.value.find((c) => c.id === activeSlide.value?.id) ?? null,
+  featured.value.find((c) => c.id === activeSlide.value?.id) ?? null,
 )
 
 function slideImage(slide) {
@@ -84,12 +104,53 @@ watch(heroSlides, () => {
   restartTimer()
 })
 
-onMounted(async () => {
+async function loadFeatured() {
+  heroLoading.value = true
   try {
-    courts.value = await getCourts()
+    const res = await getCourtTop(20)
+    featured.value = res.courts
+    if (res.summary) summary.value = res.summary
+  } finally {
+    heroLoading.value = false
+  }
+}
+
+async function loadCourts() {
+  loading.value = true
+  try {
+    const params = { page: page.value, per_page: PER_PAGE }
+    if (filter.value !== 'all') params.status = filter.value
+    const res = await getCourts(params)
+    courts.value = res.data
+    if (res.pagination) {
+      pagination.value = res.pagination
+      page.value = res.pagination.current_page
+    }
   } finally {
     loading.value = false
   }
+}
+
+function goToPage(p) {
+  const last = pagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === page.value) return
+  page.value = next
+  loadCourts()
+  document.getElementById('courts')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function setFilter(status) {
+  if (filter.value === status) return
+  filter.value = status
+  page.value = 1
+  selected.value = null
+  loadCourts()
+}
+
+onMounted(() => {
+  loadFeatured()
+  loadCourts()
 })
 
 onUnmounted(() => {
@@ -102,8 +163,8 @@ function selectCourt(c) {
 
 function onBook(court, e) {
   e?.stopPropagation()
-  if (openBooking) openBooking(court)
-  else emit('book', court)
+  if (!court?.id || court.status === 'closed') return
+  router.push({ name: 'court-detail', params: { id: String(court.id) } })
 }
 
 function scrollToCourts() {
@@ -158,7 +219,7 @@ function scrollToCourts() {
           </h1>
 
           <p class="lede mt-6">
-            Chọn khung giờ ở {{ courts.length || 6 }} cụm sân tại Hà Nội, xem giá theo giờ trước khi
+            Chọn khung giờ ở {{ heroLoading ? '…' : summary.total }} cụm sân tại Hà Nội, xem giá theo giờ trước khi
             đặt, và mua vợt, giày, cầu chính hãng ngay trong cùng một ứng dụng.
           </p>
 
@@ -186,9 +247,9 @@ function scrollToCourts() {
 
           <dl class="grid grid-cols-3 gap-5 mt-11 max-w-lg">
             <div v-for="stat in [
-              { k: 'Sân còn trống', v: loading ? '—' : String(openCount) },
-              { k: 'Mặt sân đang mở', v: loading ? '—' : String(totalCourts) },
-              { k: 'Giá từ', v: loading ? '—' : `${Math.round(lowestPrice / 1000)}k/h` },
+              { k: 'Sân còn trống', v: heroLoading ? '—' : String(summary.open) },
+              { k: 'Mặt sân đang mở', v: heroLoading ? '—' : String(summary.court_count) },
+              { k: 'Giá từ', v: heroLoading ? '—' : `${Math.round(summary.min_price / 1000)}k/h` },
             ]" :key="stat.k">
               <dt class="text-[11px] uppercase tracking-[0.12em]" style="color: var(--text-3)">
                 {{ stat.k }}
@@ -284,7 +345,7 @@ function scrollToCourts() {
             type="button"
             class="chip"
             :aria-pressed="filter === s"
-            @click="filter = s"
+            @click="setFilter(s)"
           >
             <span
               v-if="s !== 'all'"
@@ -315,7 +376,7 @@ function scrollToCourts() {
         <p class="mt-1.5 text-[13.5px]" style="color: var(--text-3)">
           Thử bỏ bộ lọc để xem toàn bộ danh sách.
         </p>
-        <button type="button" class="btn-text mt-5 mx-auto" @click="filter = 'all'">
+        <button type="button" class="btn-text mt-5 mx-auto" @click="setFilter('all')">
           Xem tất cả sân
           <Icon name="arrowRight" :size="16" />
         </button>
@@ -415,6 +476,48 @@ function scrollToCourts() {
           </div>
         </motion.article>
       </div>
+
+      <nav
+        v-if="!loading && pagination.last_page > 1"
+        class="plp__pager"
+        aria-label="Phân trang sân"
+      >
+        <p class="mono text-[12.5px]" style="color: var(--text-3)">
+          {{ pagination.from }}–{{ pagination.to }} / {{ pagination.total }} sân
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-1.5">
+          <button
+            type="button"
+            class="icon-btn border-0 bg-transparent disabled:opacity-30"
+            aria-label="Trang trước"
+            :disabled="pagination.current_page <= 1 || loading"
+            @click="goToPage(pagination.current_page - 1)"
+          >
+            <Icon name="arrowLeft" :size="17" />
+          </button>
+          <button
+            v-for="n in pageNumbers"
+            :key="n"
+            type="button"
+            class="plp__page"
+            :class="{ 'is-active': n === pagination.current_page }"
+            :aria-current="n === pagination.current_page ? 'page' : undefined"
+            :disabled="loading"
+            @click="goToPage(n)"
+          >
+            {{ n }}
+          </button>
+          <button
+            type="button"
+            class="icon-btn border-0 bg-transparent disabled:opacity-30"
+            aria-label="Trang sau"
+            :disabled="!pagination.has_more_pages || loading"
+            @click="goToPage(pagination.current_page + 1)"
+          >
+            <Icon name="arrowRight" :size="17" />
+          </button>
+        </div>
+      </nav>
     </section>
 
     <!-- Map -->
@@ -431,15 +534,12 @@ function scrollToCourts() {
       </div>
 
       <div class="grid gap-5 lg:grid-cols-5">
-        <motion.div
+        <div
           class="lg:col-span-3 relative overflow-hidden map-canvas"
           style="border-radius: var(--r-xl); border: 1px solid var(--line)"
-          :initial="{ opacity: 0, scale: 0.985 }"
-          :animate="{ opacity: 1, scale: 1 }"
-          :transition="{ duration: 0.5 }"
         >
           <CourtMap
-            :courts="shown"
+            :courts="featured"
             :selected="selected"
             :status-colors="statusColors"
             :status-short="statusShort"
@@ -461,11 +561,11 @@ function scrollToCourts() {
               {{ statusShort[s] }}
             </span>
           </div>
-        </motion.div>
+        </div>
 
         <div class="lg:col-span-2 space-y-2.5 lg:max-h-[460px] lg:overflow-y-auto pr-1">
           <button
-            v-for="c in shown"
+            v-for="c in featured"
             :key="c.id"
             type="button"
             class="w-full text-left rounded-2xl p-4 transition-all"

@@ -1,6 +1,6 @@
 <script setup>
 /**
- * Real basemap (Leaflet + OpenStreetMap tiles via CARTO) with one pin per court.
+ * Real basemap (Leaflet + OpenStreetMap France tiles) with one pin per court.
  * Courts without lat/lng are skipped — they still show in the list next to the map.
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
@@ -21,14 +21,10 @@ const emit = defineEmits(['select', 'book'])
 const { isDark } = useTheme()
 
 const HANOI_CENTER = [21.0278, 105.8342]
-const TILES = {
-  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-  dark: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
-}
+const TILES = 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png'
 
 const container = ref(null)
 let map = null
-let tileLayer = null
 /** @type {Map<string | number, import('leaflet').Marker>} */
 const markers = new Map()
 
@@ -134,10 +130,12 @@ onMounted(async () => {
     attributionControl: true,
   })
 
-  tileLayer = L.tileLayer(isDark.value ? TILES.dark : TILES.light, {
-    maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  container.value.classList.toggle('is-dark', isDark.value)
+
+  L.tileLayer(TILES, {
+    maxZoom: 20,
+    subdomains: 'abc',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; OSM France',
   }).addTo(map)
 
   // Scroll zoom stays off until the user commits to the map.
@@ -146,6 +144,7 @@ onMounted(async () => {
 
   renderMarkers()
   fitToCourts()
+  requestAnimationFrame(() => map?.invalidateSize())
 })
 
 onUnmounted(() => {
@@ -155,7 +154,7 @@ onUnmounted(() => {
 })
 
 watch(isDark, (dark) => {
-  tileLayer?.setUrl(dark ? TILES.dark : TILES.light)
+  container.value?.classList.toggle('is-dark', dark)
 })
 
 watch(
@@ -163,6 +162,7 @@ watch(
   () => {
     renderMarkers()
     fitToCourts()
+    map?.invalidateSize()
   },
   { deep: true },
 )
@@ -199,7 +199,13 @@ watch(
 
 <style>
 .jb-map {
+  height: 100%;
+  width: 100%;
   background: var(--bg-2);
+}
+
+.jb-map.is-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
 }
 
 .jb-map .leaflet-control-attribution {

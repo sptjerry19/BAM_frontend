@@ -3,6 +3,7 @@ import { motion } from 'motion-v'
 
 defineProps({
   title: { type: String, default: '' },
+  wide: { type: Boolean, default: false },
 })
 
 defineEmits(['close'])
@@ -18,7 +19,8 @@ defineEmits(['close'])
     @click.self="$emit('close')"
   >
     <motion.div
-      class="glass-strong rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 w-full max-w-md relative max-h-[92dvh] overflow-y-auto"
+      class="glass-strong rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 w-full relative max-h-[92dvh] overflow-y-auto"
+      :class="wide ? 'max-w-3xl' : 'max-w-md'"
       :initial="{ opacity: 0, y: 40, scale: 0.98 }"
       :animate="{ opacity: 1, y: 0, scale: 1 }"
       :exit="{ opacity: 0, y: 24, scale: 0.98 }"

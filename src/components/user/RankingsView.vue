@@ -1,10 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
-import { levelLabels } from '../../utils/labels'
-import { upload } from '../../utils/uploads'
-import { ATHLETES } from '../../data/athletes'
+import { getRankings } from '../../api'
+import { formatCurrency, levelLabels } from '../../utils/labels'
 
 const router = useRouter()
 
@@ -13,22 +12,27 @@ const TABS = [
   { id: 'members', label: 'Thành viên' },
 ]
 
-const MEMBERS = [
-  { rank: 1, name: 'Linh Vũ', level: 'platinum', hours: 86, bookings: 42, spend: '24.5tr', trend: 'up', avatar: upload(1) },
-  { rank: 2, name: 'Đức Phạm', level: 'gold', hours: 71, bookings: 38, spend: '18.2tr', trend: 'up', avatar: upload(2) },
-  { rank: 3, name: 'Mai Trần', level: 'gold', hours: 64, bookings: 33, spend: '15.8tr', trend: 'same', avatar: upload(3) },
-  { rank: 4, name: 'Hùng Lê', level: 'silver', hours: 52, bookings: 29, spend: '11.4tr', trend: 'down', avatar: upload(4) },
-  { rank: 5, name: 'An Nguyễn', level: 'silver', hours: 47, bookings: 26, spend: '9.6tr', trend: 'up', avatar: upload(5) },
-  { rank: 6, name: 'Khoa Đỗ', level: 'silver', hours: 41, bookings: 22, spend: '8.1tr', trend: 'same', avatar: upload(6) },
-  { rank: 7, name: 'Vy Hoàng', level: 'bronze', hours: 33, bookings: 18, spend: '5.4tr', trend: 'up', avatar: upload(7) },
-  { rank: 8, name: 'Nam Bùi', level: 'bronze', hours: 28, bookings: 15, spend: '4.2tr', trend: 'down', avatar: upload(8) },
-]
-
 const tab = ref('athletes')
+const athletes = ref([])
+const members = ref([])
+const loading = ref(true)
+const loadError = ref('')
 
-const topAthletes = computed(() => ATHLETES.slice(0, 5))
-const athleteRows = computed(() => ATHLETES)
-const memberRows = computed(() => MEMBERS)
+const topAthletes = computed(() => athletes.value.slice(0, 5))
+
+onMounted(async () => {
+  loading.value = true
+  loadError.value = ''
+  try {
+    const data = await getRankings(20)
+    athletes.value = data.athletes
+    members.value = data.members
+  } catch {
+    loadError.value = 'Không tải được bảng xếp hạng. Thử lại sau.'
+  } finally {
+    loading.value = false
+  }
+})
 
 function medal(rank) {
   if (rank === 1) return '#f5c542'
@@ -59,7 +63,10 @@ function openAthlete(a) {
       </p>
     </header>
 
-    <div class="flex gap-2 mt-8" role="tablist" aria-label="Loại xếp hạng">
+    <p v-if="loading" class="lede mt-8">Đang tải bảng xếp hạng…</p>
+    <p v-else-if="loadError" class="lede mt-8">{{ loadError }}</p>
+
+    <div v-else class="flex gap-2 mt-8" role="tablist" aria-label="Loại xếp hạng">
       <button
         v-for="t in TABS"
         :key="t.id"
@@ -79,7 +86,7 @@ function openAthlete(a) {
     </div>
 
     <!-- Top 5 athletes highlight -->
-    <section v-if="tab === 'athletes'" class="mt-10" aria-labelledby="top5-title">
+    <section v-if="!loading && !loadError && tab === 'athletes'" class="mt-10" aria-labelledby="top5-title">
       <h2 id="top5-title" class="section-head">Top 5 nổi bật</h2>
       <p class="mt-2 text-[14px]" style="color: var(--text-3)">Chạm vào thẻ để xem hồ sơ chi tiết.</p>
 
@@ -125,7 +132,7 @@ function openAthlete(a) {
             </div>
           </div>
           <div class="px-3.5 py-3 flex items-center justify-between text-[12.5px]" style="border-top: 1px solid var(--line)">
-            <span style="color: var(--text-3)">{{ a.style }}</span>
+            <span style="color: var(--text-3)">{{ levelLabels[a.level] || a.level }}</span>
             <span class="font-semibold" style="color: var(--accent)">Xem hồ sơ</span>
           </div>
         </motion.button>
@@ -133,9 +140,9 @@ function openAthlete(a) {
     </section>
 
     <!-- Member top 3 (simpler) -->
-    <div v-else class="grid gap-4 sm:grid-cols-3 mt-8">
+    <div v-else-if="!loading && !loadError" class="grid gap-4 sm:grid-cols-3 mt-8">
       <motion.div
-        v-for="(top, i) in memberRows.slice(0, 3)"
+        v-for="(top, i) in members.slice(0, 3)"
         :key="`m-${top.rank}`"
         class="surface p-5 text-center"
         :initial="{ opacity: 0, y: 14 }"
@@ -150,7 +157,7 @@ function openAthlete(a) {
     </div>
 
     <!-- Full list -->
-    <div class="surface mt-8 overflow-x-auto">
+    <div v-if="!loading && !loadError" class="surface mt-8 overflow-x-auto">
       <table class="w-full text-left min-w-[680px]">
         <thead>
           <tr class="text-[11px] uppercase tracking-[0.1em]" style="color: var(--text-3)">
@@ -168,7 +175,7 @@ function openAthlete(a) {
         <tbody>
           <template v-if="tab === 'athletes'">
             <motion.tr
-              v-for="(row, i) in athleteRows"
+              v-for="(row, i) in athletes"
               :key="row.id"
               class="cursor-pointer transition-colors hover:bg-[var(--bg-2)]"
               style="border-top: 1px solid var(--line)"
@@ -203,7 +210,7 @@ function openAthlete(a) {
           </template>
           <template v-else>
             <motion.tr
-              v-for="(row, i) in memberRows"
+              v-for="(row, i) in members"
               :key="`mem-${row.rank}`"
               style="border-top: 1px solid var(--line)"
               :initial="{ opacity: 0 }"
@@ -222,7 +229,7 @@ function openAthlete(a) {
               <td class="px-5 py-3.5 text-[13.5px]" style="color: var(--text-2)">{{ levelLabels[row.level] || row.level }}</td>
               <td class="px-5 py-3.5 mono text-[14px]">{{ row.hours }}h</td>
               <td class="px-5 py-3.5 mono text-[13.5px]" style="color: var(--text-2)">{{ row.bookings }}</td>
-              <td class="px-5 py-3.5 mono text-[13.5px]">{{ row.spend }}</td>
+              <td class="px-5 py-3.5 mono text-[13.5px]">{{ formatCurrency(row.spend) }}</td>
               <td
                 class="px-5 py-3.5 text-[12.5px] font-semibold"
                 :style="{ color: row.trend === 'up' ? 'var(--accent)' : row.trend === 'down' ? '#f87171' : 'var(--text-3)' }"
@@ -236,7 +243,7 @@ function openAthlete(a) {
     </div>
 
     <p class="mt-5 text-[12.5px]" style="color: var(--text-3)">
-      Dữ liệu minh họa cho UI — hồ sơ vận động viên chưa kết nối backend.
+      Vận động viên xếp theo điểm. Thành viên xếp theo giờ đặt sân trong tháng này.
     </p>
   </div>
 </template>

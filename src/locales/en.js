@@ -61,6 +61,8 @@ export default {
   titles: {
     home: 'Home',
     courts: 'Courts',
+    courtDetail: 'Court detail',
+    courtBookingCheckout: 'Court checkout',
     shop: 'Shop',
     productDetail: 'Product detail',
     cart: 'Cart',

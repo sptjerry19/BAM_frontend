@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../../api'
 import Modal from '../common/Modal.vue'
 import FormField from '../common/FormField.vue'
 import Stars from '../common/Stars.vue'
+import Icon from '../common/Icon.vue'
 import { categoryLabels, catIcons, formatCurrency, productCoverUrl, productImageUrl } from '../../utils/labels'
 
 const products = ref([])
@@ -13,7 +14,18 @@ const saving = ref(false)
 const showModal = ref(false)
 const editing = ref(null)
 const filterCategory = ref('')
+const search = ref('')
+const searchQuery = ref('')
+const page = ref(1)
+const perPage = 12
 const formError = ref('')
+const pagination = ref({
+  current_page: 1,
+  per_page: 12,
+  total: 0,
+  last_page: 1,
+  has_more_pages: false,
+})
 
 const emptyForm = () => ({
   id: '',
@@ -43,32 +55,78 @@ const categories = Object.entries(categoryLabels)
 const categoryOptions = [{ value: '', label: 'Tất cả' }, ...categories]
 const categoryFormOptions = categories
 
-const filtered = computed(() =>
-  filterCategory.value
-    ? products.value.filter((p) => p.category === filterCategory.value)
-    : products.value,
-)
-
 const previewItems = computed(() => [
   ...existingImages.value.map((url) => ({ type: 'remote', url: productImageUrl(url), key: url })),
   ...pendingPreviews.value.map((url, i) => ({ type: 'local', url, key: `local-${i}` })),
 ])
+
+const pageNumbers = computed(() => {
+  const last = pagination.value.last_page || 1
+  const current = pagination.value.current_page || 1
+  const windowSize = 5
+  let start = Math.max(1, current - Math.floor(windowSize / 2))
+  const end = Math.min(last, start + windowSize - 1)
+  start = Math.max(1, end - windowSize + 1)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
 function discountPct(product) {
   if (!product.original_price || product.original_price <= product.price) return 0
   return Math.round((1 - product.price / product.original_price) * 100)
 }
 
+let searchTimer = null
+
 async function load() {
   loading.value = true
   try {
-    products.value = (await getProducts(undefined, { per_page: 100 })).data
+    const category = filterCategory.value || undefined
+    const res = await getProducts(category, {
+      page: page.value,
+      per_page: perPage,
+      ...(searchQuery.value ? { search: searchQuery.value } : {}),
+    })
+    products.value = res.data
+    if (res.pagination) {
+      pagination.value = res.pagination
+      page.value = res.pagination.current_page
+    }
   } finally {
     loading.value = false
   }
 }
 
+function setCategory(value) {
+  if (filterCategory.value === value) return
+  filterCategory.value = value
+  page.value = 1
+  load()
+}
+
+function goToPage(p) {
+  const last = pagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === page.value) return
+  page.value = next
+  load()
+}
+
+watch(search, (value) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    searchQuery.value = value.trim()
+    page.value = 1
+    load()
+  }, 350)
+})
+
 onMounted(load)
+
+onUnmounted(() => {
+  clearTimeout(searchTimer)
+})
 
 function revokePreviews() {
   pendingPreviews.value.forEach((url) => URL.revokeObjectURL(url))
@@ -193,12 +251,33 @@ async function remove(id) {
       <div>
         <p class="eyebrow">Kho hàng</p>
         <h1 class="page-title mt-2">Sản phẩm</h1>
-        <p class="lede mt-3">{{ products.length }} sản phẩm trong catalog</p>
+        <p class="lede mt-3">
+          {{ (pagination.total || products.length).toLocaleString('vi-VN') }} sản phẩm trong catalog
+        </p>
       </div>
       <button type="button" class="btn-primary rounded-xl px-5 py-3 text-[14px] font-semibold" @click="openAdd">
         Thêm sản phẩm
       </button>
     </header>
+
+    <div class="mb-4">
+      <label class="sr-only" for="admin-product-search">Tìm sản phẩm</label>
+      <div class="relative">
+        <Icon
+          name="search"
+          :size="16"
+          class="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+          style="color: var(--text-3)"
+        />
+        <input
+          id="admin-product-search"
+          v-model="search"
+          type="search"
+          placeholder="Tìm theo tên, thương hiệu…"
+          class="input-field w-full rounded-xl pl-10 pr-4 py-2.5 text-sm"
+        />
+      </div>
+    </div>
 
     <div class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="Lọc danh mục">
       <button
@@ -209,7 +288,7 @@ async function remove(id) {
         class="admin-chip"
         :class="{ 'is-active': filterCategory === cat.value }"
         :aria-selected="filterCategory === cat.value"
-        @click="filterCategory = cat.value"
+        @click="setCategory(cat.value)"
       >
         <span v-if="cat.value" class="mr-1 opacity-70">{{ catIcons[cat.value] }}</span>
         {{ cat.value ? cat.label : 'Tất cả' }}
@@ -220,9 +299,13 @@ async function remove(id) {
       <div v-for="i in 6" :key="i" class="surface h-72 shimmer" />
     </div>
 
+    <div v-else-if="!products.length" class="surface p-10 text-center">
+      <p class="text-sm" style="color: var(--text-3)">Không tìm thấy sản phẩm phù hợp.</p>
+    </div>
+
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <motion.article
-        v-for="(product, i) in filtered"
+        v-for="(product, i) in products"
         :key="product.id"
         class="surface overflow-hidden group"
         :initial="{ opacity: 0, y: 14 }"
@@ -296,6 +379,45 @@ async function remove(id) {
         </div>
       </motion.article>
     </div>
+
+    <nav
+      v-if="!loading && pagination.last_page > 1"
+      class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6"
+      aria-label="Phân trang sản phẩm"
+    >
+      <p class="mono text-[12.5px]" style="color: var(--text-3)">
+        Trang {{ pagination.current_page }} / {{ pagination.last_page }}
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-1.5">
+        <button
+          type="button"
+          class="btn-ghost rounded-xl px-3 py-2 text-[13px] font-semibold disabled:opacity-30"
+          :disabled="pagination.current_page <= 1 || loading"
+          @click="goToPage(pagination.current_page - 1)"
+        >
+          Trước
+        </button>
+        <button
+          v-for="n in pageNumbers"
+          :key="n"
+          type="button"
+          class="admin-chip"
+          :class="{ 'is-active': n === pagination.current_page }"
+          :disabled="loading"
+          @click="goToPage(n)"
+        >
+          {{ n }}
+        </button>
+        <button
+          type="button"
+          class="btn-ghost rounded-xl px-3 py-2 text-[13px] font-semibold disabled:opacity-30"
+          :disabled="!pagination.has_more_pages || loading"
+          @click="goToPage(pagination.current_page + 1)"
+        >
+          Sau
+        </button>
+      </div>
+    </nav>
 
     <AnimatePresence>
       <Modal v-if="showModal" :title="editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'" @close="showModal = false">

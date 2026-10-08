@@ -2,7 +2,7 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
-import { getProducts, createOrder } from '../../api'
+import { getProductsByIds, createOrder } from '../../api'
 import Icon from '../common/Icon.vue'
 import { formatCurrency, productCoverUrl } from '../../utils/labels'
 import {
@@ -37,7 +37,7 @@ const showVoucherList = ref(true)
 const cartProducts = computed(() =>
   cart.value
     .map((item) => {
-      const product = products.value.find((p) => p.id === item.productId)
+      const product = products.value.find((p) => String(p.id) === String(item.productId))
       return product ? { ...item, product } : null
     })
     .filter(Boolean),
@@ -77,7 +77,7 @@ onMounted(async () => {
     return
   }
 
-  products.value = (await getProducts(undefined, { per_page: 100 })).data
+  products.value = await getProductsByIds((cart.value || []).map((i) => i.productId))
 })
 
 function selectPayment(id) {

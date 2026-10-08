@@ -5,6 +5,8 @@ import { useLocale } from '../composables/useLocale'
 import UserApp from '../components/user/UserApp.vue'
 import HomeView from '../components/user/HomeView.vue'
 import MapView from '../components/user/MapView.vue'
+import CourtDetailView from '../components/user/CourtDetailView.vue'
+import BookingCheckoutView from '../components/user/BookingCheckoutView.vue'
 import ShopView from '../components/user/ShopView.vue'
 import ProductDetailView from '../components/user/ProductDetailView.vue'
 import CartView from '../components/user/CartView.vue'
@@ -24,6 +26,7 @@ import AdminDashboard from '../components/admin/AdminDashboard.vue'
 import CourtsManager from '../components/admin/CourtsManager.vue'
 import ProductsManager from '../components/admin/ProductsManager.vue'
 import MembersManager from '../components/admin/MembersManager.vue'
+import NewsManager from '../components/admin/NewsManager.vue'
 
 import LoginView from '../components/auth/LoginView.vue'
 import RegisterView from '../components/auth/RegisterView.vue'
@@ -69,6 +72,18 @@ const routes = [
         name: 'courts',
         component: MapView,
         meta: { fullBleed: true, title: 'Đặt sân', titleKey: 'titles.courts' },
+      },
+      {
+        path: 'courts/:id',
+        name: 'court-detail',
+        component: CourtDetailView,
+        meta: { fullBleed: true, title: 'Chi tiết sân', titleKey: 'titles.courtDetail' },
+      },
+      {
+        path: 'courts/:id/checkout',
+        name: 'court-booking-checkout',
+        component: BookingCheckoutView,
+        meta: { requiresAuth: true, title: 'Thanh toán đặt sân', titleKey: 'titles.courtBookingCheckout' },
       },
       { path: 'shop', name: 'shop', component: ShopView, meta: { fullBleed: true, title: 'Cửa hàng', titleKey: 'titles.shop' } },
       {
@@ -160,6 +175,12 @@ const routes = [
         name: 'admin-members',
         component: MembersManager,
         meta: { title: 'Thành viên' },
+      },
+      {
+        path: 'news',
+        name: 'admin-news',
+        component: NewsManager,
+        meta: { title: 'Tin tức' },
       },
     ],
   },

@@ -149,7 +149,7 @@ function statusBarWidth(status) {
             <img
               :src="productCoverUrl(product)"
               :alt="product.name"
-              class="w-full h-36 object-cover"
+              class="w-full h-64 object-cover"
             />
             <div class="p-3.5">
               <div class="text-[14px] font-semibold truncate">{{ product.name }}</div>

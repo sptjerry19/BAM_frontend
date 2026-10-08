@@ -1,131 +1,35 @@
 <script setup>
-import { inject } from 'vue'
+import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
+import { getBestsellers } from '../../api'
 import Icon from '../common/Icon.vue'
-import { formatCurrency } from '../../utils/labels'
-import { upload } from '../../utils/uploads'
+import { categoryLabels, formatCurrency, productCoverUrl } from '../../utils/labels'
 
 const router = useRouter()
 const openProductDetail = inject('openProductDetail', null)
 const addToCart = inject('addToCart', null)
 
-const TOP = [
-  {
-    rank: 1,
-    id: 'p_demo_1',
-    name: 'Yonex Astrox 88D Pro',
-    brand: 'Yonex',
-    category: 'Vợt',
-    price: 3850000,
-    sold: 1284,
-    rating: 4.9,
-    image: upload(1),
-  },
-  {
-    rank: 2,
-    id: 'p_demo_2',
-    name: 'Yonex Power Cushion 65Z3',
-    brand: 'Yonex',
-    category: 'Giày',
-    price: 2890000,
-    sold: 1102,
-    rating: 4.8,
-    image: upload(2),
-  },
-  {
-    rank: 3,
-    id: 'p_demo_3',
-    name: 'Li-Ning Aeronaut 9000',
-    brand: 'Li-Ning',
-    category: 'Vợt',
-    price: 3200000,
-    sold: 956,
-    rating: 4.7,
-    image: upload(3),
-  },
-  {
-    rank: 4,
-    id: 'p_demo_4',
-    name: 'Victor Thruster K',
-    brand: 'Victor',
-    category: 'Vợt',
-    price: 2750000,
-    sold: 841,
-    rating: 4.6,
-    image: upload(4),
-  },
-  {
-    rank: 5,
-    id: 'p_demo_5',
-    name: 'AS-50 Tournament Cork',
-    brand: 'Yonex',
-    category: 'Cầu',
-    price: 420000,
-    sold: 790,
-    rating: 4.8,
-    image: upload(5),
-  },
-  {
-    rank: 6,
-    id: 'p_demo_6',
-    name: 'Pro Tour Bag 9R',
-    brand: 'Victor',
-    category: 'Túi',
-    price: 1650000,
-    sold: 712,
-    rating: 4.5,
-    image: upload(6),
-  },
-  {
-    rank: 7,
-    id: 'p_demo_7',
-    name: 'BG80 Power String',
-    brand: 'Yonex',
-    category: 'Dây',
-    price: 220000,
-    sold: 688,
-    rating: 4.7,
-    image: upload(7),
-  },
-  {
-    rank: 8,
-    id: 'p_demo_8',
-    name: 'Match Jersey Pro',
-    brand: 'Li-Ning',
-    category: 'Áo',
-    price: 590000,
-    sold: 640,
-    rating: 4.4,
-    image: upload(8),
-  },
-  {
-    rank: 9,
-    id: 'p_demo_9',
-    name: 'AC102EX Overgrip',
-    brand: 'Yonex',
-    category: 'Grip',
-    price: 85000,
-    sold: 602,
-    rating: 4.6,
-    image: upload(9),
-  },
-  {
-    rank: 10,
-    id: 'p_demo_10',
-    name: 'Kawasaki Sky Flash',
-    brand: 'Kawasaki',
-    category: 'Giày',
-    price: 1690000,
-    sold: 558,
-    rating: 4.3,
-    image: upload(10),
-  },
-]
+const products = ref([])
+const loading = ref(true)
+const loadError = ref('')
+
+onMounted(async () => {
+  loading.value = true
+  loadError.value = ''
+  try {
+    products.value = await getBestsellers(10)
+  } catch {
+    loadError.value = 'Không tải được danh sách. Thử lại sau.'
+    products.value = []
+  } finally {
+    loading.value = false
+  }
+})
 
 function onOpen(p) {
   if (openProductDetail) openProductDetail(p)
-  else router.push({ name: 'shop' })
+  else router.push({ name: 'product-detail', params: { id: String(p.id) } })
 }
 
 function onAdd(p) {
@@ -139,13 +43,21 @@ function onAdd(p) {
       <p class="eyebrow">Bán chạy</p>
       <h1 class="page-title mt-2">Top 10 sản phẩm</h1>
       <p class="lede mt-3">
-        Những món được đặt nhiều nhất trong 30 ngày qua tại JBadminton.
+        Những món được đặt nhiều nhất tại JBadminton.
       </p>
     </header>
 
-    <ol class="mt-10 space-y-3">
+    <div v-if="loading" class="mt-10 space-y-3">
+      <div v-for="i in 6" :key="i" class="surface h-24 shimmer" />
+    </div>
+
+    <p v-else-if="loadError" class="lede mt-10">{{ loadError }}</p>
+
+    <p v-else-if="!products.length" class="lede mt-10">Chưa có sản phẩm bán chạy.</p>
+
+    <ol v-else class="mt-10 space-y-3">
       <motion.li
-        v-for="(p, i) in TOP"
+        v-for="(p, i) in products"
         :key="p.id"
         class="surface p-3 sm:p-4 flex items-center gap-3 sm:gap-5"
         :initial="{ opacity: 0, y: 14 }"
@@ -154,9 +66,9 @@ function onAdd(p) {
       >
         <span
           class="mono w-8 sm:w-10 shrink-0 text-center font-bold text-[18px] sm:text-[22px]"
-          :style="{ color: p.rank <= 3 ? 'var(--accent)' : 'var(--text-3)' }"
+          :style="{ color: i < 3 ? 'var(--accent)' : 'var(--text-3)' }"
         >
-          {{ String(p.rank).padStart(2, '0') }}
+          {{ String(i + 1).padStart(2, '0') }}
         </span>
 
         <button
@@ -165,12 +77,17 @@ function onAdd(p) {
           :aria-label="`Xem ${p.name}`"
           @click="onOpen(p)"
         >
-          <img :src="p.image" :alt="p.name" class="w-full h-full object-cover" loading="lazy" />
+          <img
+            :src="productCoverUrl(p)"
+            :alt="p.name"
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
         </button>
 
         <div class="min-w-0 flex-1">
           <p class="text-[10.5px] uppercase tracking-[0.1em]" style="color: var(--text-3)">
-            {{ p.brand }} · {{ p.category }}
+            {{ p.brand }} · {{ categoryLabels[p.category] || p.category }}
           </p>
           <button
             type="button"
@@ -180,7 +97,7 @@ function onAdd(p) {
             {{ p.name }}
           </button>
           <p class="mono text-[12.5px] mt-1.5" style="color: var(--text-3)">
-            {{ p.sold.toLocaleString('vi-VN') }} đã bán · ★ {{ p.rating }}
+            {{ Number(p.sold_count || 0).toLocaleString('vi-VN') }} đã bán · ★ {{ p.rating }}
           </p>
         </div>
 

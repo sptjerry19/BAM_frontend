@@ -19,6 +19,7 @@ const navItems = [
   { name: 'admin-courts', label: 'Quản lý sân', icon: 'court' },
   { name: 'admin-products', label: 'Sản phẩm', icon: 'bag' },
   { name: 'admin-members', label: 'Thành viên', icon: 'user' },
+  { name: 'admin-news', label: 'Tin tức', icon: 'news' },
 ]
 
 const currentNav = computed(

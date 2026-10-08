@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { getMembers, getMember } from '../../api'
+import { getMembers, getMember, updateMemberStatus, deleteMember } from '../../api'
 import Modal from '../common/Modal.vue'
 import StatusPill from '../common/StatusPill.vue'
 import { levelLabels, levelColors, formatCurrency } from '../../utils/labels'
@@ -12,6 +12,8 @@ const search = ref('')
 const levelFilter = ref('')
 const selected = ref(null)
 const detail = ref(null)
+const acting = ref(false)
+const actionError = ref('')
 
 const levels = [
   { value: '', label: 'Tất cả' },
@@ -39,6 +41,45 @@ async function openDetail(member) {
 function closeDetail() {
   selected.value = null
   detail.value = null
+  actionError.value = ''
+}
+
+function apiError(err) {
+  return err?.api?.message || err?.response?.data?.message || 'Không thực hiện được. Thử lại.'
+}
+
+async function toggleHidden() {
+  if (!detail.value || acting.value) return
+  acting.value = true
+  actionError.value = ''
+  const next = detail.value.status === 'active' ? 'inactive' : 'active'
+  try {
+    const updated = await updateMemberStatus(detail.value.id, next)
+    detail.value = { ...detail.value, ...updated }
+    const index = members.value.findIndex((m) => String(m.id) === String(updated.id))
+    if (index >= 0) members.value[index] = { ...members.value[index], ...updated }
+  } catch (err) {
+    actionError.value = apiError(err)
+  } finally {
+    acting.value = false
+  }
+}
+
+async function removeAccount() {
+  if (!detail.value || acting.value) return
+  const name = detail.value.name
+  if (!confirm(`Xóa tài khoản của ${name}? Hồ sơ thành viên và đăng nhập sẽ bị gỡ.`)) return
+  acting.value = true
+  actionError.value = ''
+  try {
+    await deleteMember(detail.value.id)
+    closeDetail()
+    await load()
+  } catch (err) {
+    actionError.value = apiError(err)
+  } finally {
+    acting.value = false
+  }
 }
 
 const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
@@ -196,6 +237,28 @@ const winRate = (m) => (m.matches ? Math.round((m.wins / m.matches) * 100) : 0)
           </div>
 
           <div class="text-[12px] mono" style="color: var(--text-3)">Tham gia: {{ detail.join_date }}</div>
+
+          <p v-if="actionError" class="text-[13px]" style="color: #ef4444">{{ actionError }}</p>
+
+          <div class="flex gap-3 pt-1">
+            <button
+              type="button"
+              class="btn-ghost flex-1 rounded-xl py-3 text-[14px] font-semibold disabled:opacity-40"
+              :disabled="acting"
+              @click="toggleHidden"
+            >
+              {{ detail.status === 'active' ? 'Ẩn tài khoản' : 'Hiện lại' }}
+            </button>
+            <button
+              type="button"
+              class="flex-1 rounded-xl py-3 text-[14px] font-semibold disabled:opacity-40"
+              style="background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.2)"
+              :disabled="acting"
+              @click="removeAccount"
+            >
+              Xóa tài khoản
+            </button>
+          </div>
         </div>
       </Modal>
     </AnimatePresence>
