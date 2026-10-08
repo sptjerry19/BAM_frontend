@@ -178,7 +178,7 @@ onMounted(() => {
 
       <div class="mt-10 lg:mt-14 grid gap-12 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-16 items-start">
         <div>
-          <div class="news-prose max-w-[68ch]" v-html="html" />
+          <div class="news-prose max-w-[100ch]" v-html="html" />
 
           <div
             class="mt-12 pt-8 flex flex-wrap items-center justify-between gap-4"
