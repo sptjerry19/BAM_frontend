@@ -1,7 +1,7 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
-import { getProducts, getCourts } from '../../api'
+import { getProductsByIds, getPickedCourts } from '../../api'
 import Stars from '../common/Stars.vue'
 import Icon from '../common/Icon.vue'
 import { formatCurrency, productCoverUrl, productImageUrl, categoryLabels } from '../../utils/labels'
@@ -20,20 +20,20 @@ const addedId = ref(null)
 const loading = ref(true)
 
 const favProducts = computed(() =>
-  products.value.filter((p) => favorites.value.includes(p.id)),
+  products.value.filter((p) => favorites.value.some((id) => String(id) === String(p.id))),
 )
 
 const favCourts = computed(() =>
-  courts.value.filter((c) => favorites.value.includes(c.id)),
+  courts.value.filter((c) => favorites.value.some((id) => String(id) === String(c.id))),
 )
 
 onMounted(async () => {
   try {
-    const [productsRes, courtsRes] = await Promise.all([
-      getProducts(undefined, { per_page: 100 }),
-      getCourts(),
+    const [productRows, courtsRes] = await Promise.all([
+      getProductsByIds(favorites.value || []),
+      getPickedCourts(favorites.value || []),
     ])
-    products.value = productsRes.data
+    products.value = productRows
     courts.value = courtsRes
   } finally {
     loading.value = false

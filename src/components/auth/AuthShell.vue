@@ -2,6 +2,7 @@
 import { motion } from 'motion-v'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import LocaleToggle from '../common/LocaleToggle.vue'
+import Icon from '../common/Icon.vue'
 
 defineProps({
   title: { type: String, required: true },
@@ -11,6 +12,13 @@ defineProps({
 
 <template>
   <div class="min-h-[100dvh] mesh-bg grid-dots flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden">
+    <RouterLink
+      :to="{ name: 'home' }"
+      class="btn-text absolute top-4 left-4 sm:top-6 sm:left-6 z-10"
+    >
+      <Icon name="arrowLeft" :size="16" />
+      Trang chủ
+    </RouterLink>
     <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex items-center gap-2">
       <LocaleToggle />
       <ThemeToggle />

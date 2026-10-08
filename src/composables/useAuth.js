@@ -104,6 +104,10 @@ export function useAuth() {
     }
   }
 
+  function replaceUser(nextUser) {
+    persist(token.value, nextUser)
+  }
+
   async function forgotPassword(email) {
     loading.value = true
     try {
@@ -137,6 +141,7 @@ export function useAuth() {
     logout,
     forgotPassword,
     resetPassword,
+    replaceUser,
     clearAuth,
     apiErrorMessage,
   }

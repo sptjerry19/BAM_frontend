@@ -1,8 +1,9 @@
 <script setup>
-import { ref, inject, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, onUnmounted, computed, watch } from 'vue'
 import { motion, AnimatePresence } from 'motion-v'
 import {
   getProducts,
+  getProductsByIds,
   getCustomEquipments,
   createCustomEquipment,
   deleteCustomEquipment,
@@ -26,6 +27,16 @@ const customItems = ref([])
 const showForm = ref(false)
 const showPicker = ref(false)
 const pickerSearch = ref('')
+const pickerQuery = ref('')
+const pickerPage = ref(1)
+const pickerLoading = ref(false)
+const pickerProducts = ref([])
+const pickerPagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  has_more_pages: false,
+})
 const submitting = ref(false)
 const formError = ref('')
 const attachingId = ref(null)
@@ -41,10 +52,7 @@ const form = ref({
 
 const categoryOptions = Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))
 
-const myEquipment = computed(() => {
-  const ids = user.value?.equipment || []
-  return products.value.filter((p) => ids.includes(p.id))
-})
+const myEquipment = computed(() => products.value)
 
 const catGroups = computed(() => {
   const groups = {}
@@ -58,19 +66,28 @@ const catGroups = computed(() => {
 const storeCount = computed(() => myEquipment.value.length)
 const customCount = computed(() => customItems.value.length)
 
-const availableProducts = computed(() => {
-  const owned = new Set(user.value?.equipment || [])
-  const q = pickerSearch.value.trim().toLowerCase()
-  return products.value.filter((p) => {
-    if (owned.has(p.id)) return false
-    if (!q) return true
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.brand || '').toLowerCase().includes(q) ||
-      (categoryLabels[p.category] || '').toLowerCase().includes(q)
-    )
-  })
+const ownedIds = computed(() => new Set((user.value?.equipment || []).map(String)))
+
+const availableProducts = computed(() =>
+  pickerProducts.value.filter((p) => !ownedIds.value.has(String(p.id))),
+)
+
+const pickerPageNumbers = computed(() => {
+  const last = pickerPagination.value.last_page || 1
+  const current = pickerPagination.value.current_page || 1
+  const windowSize = 5
+  let start = Math.max(1, current - Math.floor(windowSize / 2))
+  const end = Math.min(last, start + windowSize - 1)
+  start = Math.max(1, end - windowSize + 1)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
 })
+
+async function loadOwnedProducts() {
+  const ids = user.value?.equipment || []
+  products.value = await getProductsByIds(ids)
+}
 
 async function loadCustom() {
   if (!user.value?.id) return
@@ -81,6 +98,51 @@ async function loadCustom() {
     customItems.value = []
   }
 }
+
+let pickerTimer = null
+
+async function loadPicker() {
+  pickerLoading.value = true
+  try {
+    const res = await getProducts(undefined, {
+      page: pickerPage.value,
+      per_page: 12,
+      ...(pickerQuery.value ? { search: pickerQuery.value } : {}),
+    })
+    pickerProducts.value = res.data
+    if (res.pagination) {
+      pickerPagination.value = res.pagination
+      pickerPage.value = res.pagination.current_page
+    }
+  } finally {
+    pickerLoading.value = false
+  }
+}
+
+function goPickerPage(p) {
+  const last = pickerPagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === pickerPage.value) return
+  pickerPage.value = next
+  loadPicker()
+}
+
+watch(showPicker, (open) => {
+  if (!open) return
+  pickerSearch.value = ''
+  pickerQuery.value = ''
+  pickerPage.value = 1
+  loadPicker()
+})
+
+watch(pickerSearch, (value) => {
+  clearTimeout(pickerTimer)
+  pickerTimer = setTimeout(() => {
+    pickerQuery.value = value.trim()
+    pickerPage.value = 1
+    if (showPicker.value) loadPicker()
+  }, 350)
+})
 
 function navigateShop() {
   if (goToShop) goToShop()
@@ -143,6 +205,7 @@ async function pickProduct(p) {
   attachingId.value = p.id
   try {
     await addToEquipment(p.id)
+    await loadOwnedProducts()
   } finally {
     attachingId.value = null
   }
@@ -150,6 +213,7 @@ async function pickProduct(p) {
 
 async function detachProduct(id) {
   if (removeFromEquipment) await removeFromEquipment(id)
+  await loadOwnedProducts()
 }
 
 function viewProduct(p) {
@@ -157,8 +221,11 @@ function viewProduct(p) {
 }
 
 onMounted(async () => {
-  products.value = (await getProducts(undefined, { per_page: 100 })).data
-  await loadCustom()
+  await Promise.all([loadOwnedProducts(), loadCustom()])
+})
+
+onUnmounted(() => {
+  clearTimeout(pickerTimer)
 })
 </script>
 
@@ -496,39 +563,87 @@ onMounted(async () => {
           </div>
 
           <div class="flex-1 overflow-y-auto px-5 pb-6 space-y-2">
-            <div v-if="availableProducts.length === 0" class="text-center py-10">
-              <p class="text-sm" style="color: #64748b">Không còn sản phẩm để thêm</p>
+            <div v-if="pickerLoading" class="text-center py-10">
+              <p class="text-sm" style="color: #64748b">Đang tải sản phẩm…</p>
             </div>
-            <motion.button
-              v-for="p in availableProducts"
-              :key="p.id"
-              type="button"
-              class="w-full flex items-center gap-3 p-3 rounded-xl text-left"
-              style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06)"
-              :disabled="attachingId === p.id"
-              :whileTap="{ scale: 0.98 }"
-              @click="pickProduct(p)"
-            >
-              <div
-                class="w-12 h-12 rounded-xl product-img-bg flex items-center justify-center overflow-hidden shrink-0 text-xl"
+            <div v-else-if="availableProducts.length === 0" class="text-center py-10">
+              <p class="text-sm" style="color: #64748b">
+                {{ pickerQuery ? 'Không tìm thấy sản phẩm phù hợp' : 'Không còn sản phẩm để thêm' }}
+              </p>
+            </div>
+            <template v-else>
+              <motion.button
+                v-for="p in availableProducts"
+                :key="p.id"
+                type="button"
+                class="w-full flex items-center gap-3 p-3 rounded-xl text-left"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06)"
+                :disabled="attachingId === p.id"
+                :whileTap="{ scale: 0.98 }"
+                @click="pickProduct(p)"
               >
-                <img
-                  v-if="p.image"
-                  :src="productImageUrl(p.image)"
-                  :alt="p.name"
-                  class="w-full h-full object-cover"
-                />
-                <span v-else>{{ catIcons[p.category] || '◈' }}</span>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="text-sm font-semibold truncate">{{ p.name }}</div>
-                <div class="text-xs" style="color: #64748b">{{ p.brand }} · {{ categoryLabels[p.category] }}</div>
-                <div class="mono text-xs font-semibold mt-0.5" style="color: #84cc16">{{ formatCurrency(p.price) }}</div>
-              </div>
-              <span class="text-lg shrink-0" style="color: #84cc16">
-                {{ attachingId === p.id ? '…' : '+' }}
-              </span>
-            </motion.button>
+                <div
+                  class="w-12 h-12 rounded-xl product-img-bg flex items-center justify-center overflow-hidden shrink-0 text-xl"
+                >
+                  <img
+                    v-if="p.image"
+                    :src="productImageUrl(p.image)"
+                    :alt="p.name"
+                    class="w-full h-full object-cover"
+                  />
+                  <span v-else>{{ catIcons[p.category] || '◈' }}</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-semibold truncate">{{ p.name }}</div>
+                  <div class="text-xs" style="color: #64748b">{{ p.brand }} · {{ categoryLabels[p.category] }}</div>
+                  <div class="mono text-xs font-semibold mt-0.5" style="color: #84cc16">{{ formatCurrency(p.price) }}</div>
+                </div>
+                <span class="text-lg shrink-0" style="color: #84cc16">
+                  {{ attachingId === p.id ? '…' : '+' }}
+                </span>
+              </motion.button>
+
+              <nav
+                v-if="pickerPagination.last_page > 1"
+                class="flex flex-col items-center gap-2 pt-4 pb-2"
+                aria-label="Phân trang chọn sản phẩm"
+              >
+                <p class="mono text-[11px]" style="color: #64748b">
+                  Trang {{ pickerPagination.current_page }} / {{ pickerPagination.last_page }}
+                </p>
+                <div class="flex flex-wrap items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    class="btn-ghost rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
+                    :disabled="pickerPagination.current_page <= 1 || pickerLoading"
+                    @click="goPickerPage(pickerPagination.current_page - 1)"
+                  >
+                    Trước
+                  </button>
+                  <button
+                    v-for="n in pickerPageNumbers"
+                    :key="n"
+                    type="button"
+                    class="rounded-lg px-2.5 py-1.5 text-xs font-semibold min-w-[32px]"
+                    :style="n === pickerPagination.current_page
+                      ? 'background: rgba(132,204,22,0.18); color: #84cc16'
+                      : 'color: #94a3b8'"
+                    :disabled="pickerLoading"
+                    @click="goPickerPage(n)"
+                  >
+                    {{ n }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-ghost rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
+                    :disabled="!pickerPagination.has_more_pages || pickerLoading"
+                    @click="goPickerPage(pickerPagination.current_page + 1)"
+                  >
+                    Sau
+                  </button>
+                </div>
+              </nav>
+            </template>
           </div>
         </motion.div>
       </motion.div>

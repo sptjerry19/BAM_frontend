@@ -10,7 +10,6 @@ import { useLocale } from '../../composables/useLocale'
 import Icon from '../common/Icon.vue'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import LocaleToggle from '../common/LocaleToggle.vue'
-import BookingModal from './BookingModal.vue'
 
 const CART_KEY = 'jb_cart'
 const FAV_KEY = 'jb_favorites'
@@ -32,7 +31,6 @@ const { t } = useLocale()
 const user = ref(null)
 const cart = ref(readJson(CART_KEY, []))
 const favorites = ref(readJson(FAV_KEY, []))
-const bookingCourt = ref(null)
 const menuOpen = ref(false)
 const accountOpen = ref(false)
 
@@ -125,15 +123,6 @@ async function removeFromEquipment(productId) {
   }
 }
 
-function openBooking(court) {
-  if (!requireAuth(`/courts`)) return
-  bookingCourt.value = court
-}
-
-function closeBooking() {
-  bookingCourt.value = null
-}
-
 function openProductDetail(p) {
   if (!p?.id) return
   router.push({ name: 'product-detail', params: { id: String(p.id) } })
@@ -149,7 +138,6 @@ provide('removeFavorite', removeFavorite)
 provide('addToEquipment', addToEquipment)
 provide('removeFromEquipment', removeFromEquipment)
 provide('openProductDetail', openProductDetail)
-provide('openBooking', openBooking)
 provide('requireAuth', requireAuth)
 provide('goToShop', () => router.push({ name: 'shop' }))
 
@@ -603,9 +591,5 @@ onUnmounted(() => {
         </RouterLink>
       </div>
     </nav>
-
-    <AnimatePresence>
-      <BookingModal v-if="bookingCourt" :court="bookingCourt" @close="closeBooking" />
-    </AnimatePresence>
   </div>
 </template>

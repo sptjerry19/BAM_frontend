@@ -9,6 +9,13 @@ import { formatCurrency } from '../../utils/labels'
 
 const courts = ref([])
 const loading = ref(true)
+const page = ref(1)
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  has_more_pages: false,
+})
 const showModal = ref(false)
 const editing = ref(null)
 
@@ -42,10 +49,23 @@ const statusOptions = [
 async function load() {
   loading.value = true
   try {
-    courts.value = await getCourts()
+    const res = await getCourts({ page: page.value, per_page: 8 })
+    courts.value = res.data
+    if (res.pagination) {
+      pagination.value = res.pagination
+      page.value = res.pagination.current_page
+    }
   } finally {
     loading.value = false
   }
+}
+
+function goToPage(p) {
+  const last = pagination.value.last_page || 1
+  const next = Math.min(Math.max(1, p), last)
+  if (next === page.value) return
+  page.value = next
+  load()
 }
 
 onMounted(load)
@@ -88,7 +108,7 @@ async function remove(id) {
       <div>
         <p class="eyebrow">Cơ sở</p>
         <h1 class="page-title mt-2">Quản lý sân</h1>
-        <p class="lede mt-3">{{ courts.length }} sân trong hệ thống</p>
+        <p class="lede mt-3">{{ pagination.total }} sân trong hệ thống</p>
       </div>
       <button type="button" class="btn-primary rounded-xl px-5 py-3 text-[14px] font-semibold" @click="openAdd">
         Thêm sân
@@ -198,6 +218,31 @@ async function remove(id) {
           </tbody>
         </table>
       </div>
+    </div>
+
+    <div
+      v-if="pagination.last_page > 1"
+      class="flex items-center justify-center gap-3 mt-5"
+    >
+      <button
+        type="button"
+        class="btn-ghost rounded-xl px-4 py-2 text-[13px] font-semibold disabled:opacity-30"
+        :disabled="pagination.current_page <= 1 || loading"
+        @click="goToPage(pagination.current_page - 1)"
+      >
+        Trước
+      </button>
+      <span class="mono text-[12.5px]" style="color: var(--text-3)">
+        Trang {{ pagination.current_page }} / {{ pagination.last_page }}
+      </span>
+      <button
+        type="button"
+        class="btn-ghost rounded-xl px-4 py-2 text-[13px] font-semibold disabled:opacity-30"
+        :disabled="!pagination.has_more_pages || loading"
+        @click="goToPage(pagination.current_page + 1)"
+      >
+        Sau
+      </button>
     </div>
 
     <AnimatePresence>

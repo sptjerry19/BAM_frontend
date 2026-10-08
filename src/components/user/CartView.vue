@@ -2,7 +2,7 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion, AnimatePresence } from 'motion-v'
-import { getProducts } from '../../api'
+import { getProductsByIds } from '../../api'
 import Icon from '../common/Icon.vue'
 import { formatCurrency, productCoverUrl } from '../../utils/labels'
 
@@ -19,7 +19,7 @@ const products = ref([])
 const cartProducts = computed(() =>
   cart.value
     .map((item) => {
-      const product = products.value.find((p) => p.id === item.productId)
+      const product = products.value.find((p) => String(p.id) === String(item.productId))
       return product ? { ...item, product } : null
     })
     .filter(Boolean),
@@ -33,7 +33,8 @@ const pointsSaved = computed(() => (user.value?.points ?? 0) * 10)
 const payable = computed(() => Math.max(0, total.value - pointsSaved.value))
 
 onMounted(async () => {
-  products.value = (await getProducts(undefined, { per_page: 100 })).data
+  const ids = (cart.value || []).map((i) => i.productId)
+  products.value = await getProductsByIds(ids)
 })
 
 function updateQty(productId, delta) {

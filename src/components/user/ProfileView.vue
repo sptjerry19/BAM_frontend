@@ -1,14 +1,34 @@
 <script setup>
-import { inject, computed, ref } from 'vue'
+import { inject, computed, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { motion } from 'motion-v'
+import { updateProfile } from '../../api'
+import { useAuth } from '../../composables/useAuth'
 import Icon from '../common/Icon.vue'
+import FormField from '../common/FormField.vue'
 import { levelLabels, levelColors, formatCurrency } from '../../utils/labels'
 import { upload, uploadAt } from '../../utils/uploads'
 
 const router = useRouter()
 const user = inject('user')
+const { replaceUser, apiErrorMessage } = useAuth()
 const tab = ref('posts')
+const editing = ref(false)
+const saving = ref(false)
+const formError = ref('')
+const formNotice = ref('')
+const avatarFile = ref(null)
+const avatarPreview = ref('')
+const avatarInput = ref(null)
+
+const form = ref({
+  name: '',
+  email: '',
+  phone: '',
+  current_password: '',
+  password: '',
+  password_confirmation: '',
+})
 
 const TABS = [
   { id: 'posts', label: 'Bài viết' },
@@ -82,6 +102,92 @@ function formatJoinDate(d) {
     year: 'numeric',
   })
 }
+
+function startEdit() {
+  if (!user.value) return
+  form.value = {
+    name: user.value.name || '',
+    email: user.value.email || '',
+    phone: user.value.phone || '',
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  }
+  avatarFile.value = null
+  if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
+  avatarPreview.value = ''
+  formError.value = ''
+  formNotice.value = ''
+  editing.value = true
+}
+
+function cancelEdit() {
+  editing.value = false
+  formError.value = ''
+  avatarFile.value = null
+  if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
+  avatarPreview.value = ''
+}
+
+function onAvatarPick(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (!editing.value) startEdit()
+  avatarFile.value = file
+  if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
+  avatarPreview.value = URL.createObjectURL(file)
+}
+
+function pickAvatar() {
+  startEdit()
+  avatarInput.value?.click()
+}
+
+async function saveProfile() {
+  formError.value = ''
+  formNotice.value = ''
+  if (!form.value.name.trim() || !form.value.email.trim()) {
+    formError.value = 'Vui lòng nhập họ tên và email.'
+    return
+  }
+  if (form.value.password && form.value.password !== form.value.password_confirmation) {
+    formError.value = 'Mật khẩu xác nhận không khớp.'
+    return
+  }
+
+  saving.value = true
+  try {
+    const fd = new FormData()
+    fd.append('name', form.value.name.trim())
+    fd.append('email', form.value.email.trim())
+    fd.append('phone', form.value.phone.trim())
+    if (avatarFile.value) fd.append('avatar_file', avatarFile.value)
+    if (form.value.password) {
+      fd.append('current_password', form.value.current_password)
+      fd.append('password', form.value.password)
+      fd.append('password_confirmation', form.value.password_confirmation)
+    }
+    const profile = await updateProfile(fd)
+    replaceUser(profile)
+    user.value = profile.member || {
+      ...user.value,
+      name: profile.name,
+      email: profile.email,
+    }
+    formNotice.value = 'Đã lưu hồ sơ.'
+    cancelEdit()
+    formNotice.value = 'Đã lưu hồ sơ.'
+  } catch (err) {
+    formError.value = apiErrorMessage(err, 'Không lưu được hồ sơ.')
+  } finally {
+    saving.value = false
+  }
+}
+
+onUnmounted(() => {
+  if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
+})
 </script>
 
 <template>
@@ -117,9 +223,10 @@ function formatJoinDate(d) {
         type="button"
         class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-2 rounded-xl text-[13px] font-semibold flex items-center gap-2"
         style="background: rgba(255,255,255,0.92); color: #111; border: 1px solid rgba(0,0,0,0.08)"
+        @click="startEdit"
       >
         <Icon name="spark" :size="16" />
-        Chỉnh sửa ảnh bìa
+        Chỉnh sửa hồ sơ
       </button>
     </div>
 
@@ -128,7 +235,7 @@ function formatJoinDate(d) {
       <div class="relative flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-14 sm:-mt-20">
         <div class="relative shrink-0 self-start">
           <img
-            :src="user.avatar"
+            :src="avatarPreview || user.avatar"
             :alt="displayName"
             class="w-[132px] h-[132px] sm:w-[168px] sm:h-[168px] rounded-full object-cover"
             style="border: 4px solid var(--bg); box-shadow: var(--shadow-md)"
@@ -138,6 +245,7 @@ function formatJoinDate(d) {
             class="absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center"
             style="background: var(--bg-2); border: 1px solid var(--line); color: var(--text)"
             aria-label="Đổi ảnh đại diện"
+            @click="pickAvatar"
           >
             <Icon name="plus" :size="16" />
           </button>
@@ -175,8 +283,9 @@ function formatJoinDate(d) {
             type="button"
             class="px-4 py-2.5 rounded-xl text-[14px] font-semibold"
             style="background: var(--accent); color: #0a1200"
+            @click="editing ? cancelEdit() : startEdit()"
           >
-            Chỉnh sửa trang cá nhân
+            {{ editing ? 'Đóng' : 'Chỉnh sửa trang cá nhân' }}
           </button>
           <button
             type="button"
@@ -195,8 +304,66 @@ function formatJoinDate(d) {
         </div>
       </div>
 
+      <section v-if="editing" class="surface p-5 sm:p-7 mt-6 max-w-2xl">
+        <h2 class="font-heading font-bold text-[20px]">Chỉnh sửa hồ sơ</h2>
+        <p class="text-[13.5px] mt-2" style="color: var(--text-3)">
+          Cập nhật tên, liên hệ, ảnh đại diện hoặc mật khẩu.
+        </p>
+
+        <form class="mt-5 space-y-4" @submit.prevent="saveProfile">
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            class="sr-only"
+            @change="onAvatarPick"
+          />
+          <FormField v-model="form.name" label="Họ tên" placeholder="Nguyễn Văn An" />
+          <FormField v-model="form.email" label="Email" type="email" placeholder="you@email.com" />
+          <FormField v-model="form.phone" label="Số điện thoại" placeholder="0901 234 567" />
+
+          <div>
+            <p class="block uppercase tracking-wider font-semibold" style="font-size: 11px; color: #64748b">
+              Ảnh đại diện
+            </p>
+            <div class="flex items-center gap-3 mt-2">
+              <img
+                :src="avatarPreview || user.avatar"
+                alt=""
+                class="w-14 h-14 rounded-full object-cover"
+              />
+              <button type="button" class="btn-ghost px-4 py-2.5 rounded-xl text-[13px] font-semibold" @click="avatarInput?.click()">
+                Chọn ảnh
+              </button>
+            </div>
+          </div>
+
+          <FormField v-model="form.current_password" label="Mật khẩu hiện tại" type="password" placeholder="Chỉ cần khi đổi mật khẩu" />
+          <FormField v-model="form.password" label="Mật khẩu mới" type="password" placeholder="Để trống nếu giữ nguyên" />
+          <FormField v-model="form.password_confirmation" label="Xác nhận mật khẩu mới" type="password" />
+
+          <p v-if="formError" class="text-sm text-red-400">{{ formError }}</p>
+
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button
+              type="submit"
+              class="btn-primary px-5 py-3 rounded-xl text-[14px] font-semibold disabled:opacity-50"
+              :disabled="saving"
+            >
+              {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
+            </button>
+            <button type="button" class="btn-ghost px-5 py-3 rounded-xl text-[14px] font-semibold" @click="cancelEdit">
+              Hủy
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <p v-else-if="formNotice" class="mt-4 text-[13.5px]" style="color: var(--accent)">{{ formNotice }}</p>
+
       <!-- Stats strip -->
       <div
+        v-if="!editing"
         class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 p-4 rounded-2xl"
         style="background: var(--bg-2); border: 1px solid var(--line)"
       >
@@ -224,6 +391,7 @@ function formatJoinDate(d) {
 
       <!-- Tabs -->
       <nav
+        v-if="!editing"
         class="flex gap-1 mt-6 overflow-x-auto"
         style="border-bottom: 1px solid var(--line)"
         aria-label="Mục hồ sơ"
@@ -245,7 +413,7 @@ function formatJoinDate(d) {
         </button>
       </nav>
 
-      <div class="grid gap-5 lg:grid-cols-[320px_1fr] mt-5 items-start">
+      <div v-if="!editing" class="grid gap-5 lg:grid-cols-[320px_1fr] mt-5 items-start">
         <!-- Left column -->
         <aside class="space-y-4 lg:sticky lg:top-24">
           <div class="surface p-5">
