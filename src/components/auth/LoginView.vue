@@ -72,7 +72,7 @@ async function onSubmit() {
     >
       <div class="font-semibold mb-1" style="color: #94a3b8">Tài khoản demo</div>
       <div>Admin: <span class="mono" style="color: #84cc16">admin@badminton.local</span> / password123</div>
-      <div>User: <span class="mono" style="color: #84cc16">nvan.an@gmail.com</span> / password123</div>
+      <div>User: <span class="mono" style="color: #84cc16">linhpd@gmail.com</span> / password123</div>
     </div>
   </AuthShell>
 </template>
