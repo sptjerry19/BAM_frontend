@@ -1,0 +1,133 @@
+{
+  "id": "jb-tour",
+  "format": "glTF 2.0",
+  "houseLevels": [
+    {
+      "level": 1,
+      "id": "house_lv1",
+      "url": "/games/tour/models/house_lv1.gltf"
+    },
+    {
+      "level": 2,
+      "id": "house_lv2",
+      "url": "/games/tour/models/house_lv2.gltf"
+    },
+    {
+      "level": 3,
+      "id": "house_lv3",
+      "url": "/games/tour/models/house_lv3.gltf"
+    },
+    {
+      "level": 4,
+      "id": "house_lv4",
+      "url": "/games/tour/models/house_lv4.gltf"
+    }
+  ],
+  "models": [
+    {
+      "id": "pawn_ace",
+      "url": "/games/tour/models/pawn_ace.gltf",
+      "clips": [
+        "idle",
+        "walk",
+        "hop",
+        "cheer",
+        "sad",
+        "win"
+      ]
+    },
+    {
+      "id": "pawn_ruby",
+      "url": "/games/tour/models/pawn_ruby.gltf",
+      "clips": [
+        "idle",
+        "walk",
+        "hop",
+        "cheer",
+        "sad",
+        "win"
+      ]
+    },
+    {
+      "id": "pawn_kiwi",
+      "url": "/games/tour/models/pawn_kiwi.gltf",
+      "clips": [
+        "idle",
+        "walk",
+        "hop",
+        "cheer",
+        "sad",
+        "win"
+      ]
+    },
+    {
+      "id": "pawn_blaze",
+      "url": "/games/tour/models/pawn_blaze.gltf",
+      "clips": [
+        "idle",
+        "walk",
+        "hop",
+        "cheer",
+        "sad",
+        "win"
+      ]
+    },
+    {
+      "id": "dice",
+      "url": "/games/tour/models/dice.gltf",
+      "clips": [
+        "roll"
+      ]
+    },
+    {
+      "id": "coin",
+      "url": "/games/tour/models/coin.gltf",
+      "clips": [
+        "spin"
+      ]
+    },
+    {
+      "id": "shuttle",
+      "url": "/games/tour/models/shuttle.gltf",
+      "clips": [
+        "idle",
+        "fly"
+      ]
+    },
+    {
+      "id": "house",
+      "url": "/games/tour/models/house.gltf",
+      "clips": [
+        "pop"
+      ]
+    },
+    {
+      "id": "house_lv1",
+      "url": "/games/tour/models/house_lv1.gltf",
+      "clips": [
+        "pop"
+      ]
+    },
+    {
+      "id": "house_lv2",
+      "url": "/games/tour/models/house_lv2.gltf",
+      "clips": [
+        "pop"
+      ]
+    },
+    {
+      "id": "house_lv3",
+      "url": "/games/tour/models/house_lv3.gltf",
+      "clips": [
+        "pop"
+      ]
+    },
+    {
+      "id": "house_lv4",
+      "url": "/games/tour/models/house_lv4.gltf",
+      "clips": [
+        "pop"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+export { default as TourBox } from './TourBox.vue'
+export { default as TourGltf } from './TourGltf.vue'
+export { default as TourPawn } from './TourPawn.vue'
+export { default as TourDice } from './TourDice.vue'
+export { default as TourCoin } from './TourCoin.vue'
+export { default as TourShuttle } from './TourShuttle.vue'
+export { default as TourHouse } from './TourHouse.vue'
+export { TOUR_SKINS, TOUR_ANIMS, TOUR_PROPS, HOUSE_LEVELS, HOUSE_SPRITES, skinById, houseSprite, propSprite } from './catalog'

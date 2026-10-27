@@ -32,6 +32,9 @@ import LoginView from '../components/auth/LoginView.vue'
 import RegisterView from '../components/auth/RegisterView.vue'
 import ForgotPasswordView from '../components/auth/ForgotPasswordView.vue'
 import NotFoundView from '../components/common/NotFoundView.vue'
+import TourAssetStudio from '../components/games/tour/TourAssetStudio.vue'
+import CrLobbyView from '../components/games/cr/CrLobbyView.vue'
+import CrRoomView from '../components/games/cr/CrRoomView.vue'
 
 const routes = [
   {
@@ -142,6 +145,24 @@ const routes = [
         name: 'profile',
         component: ProfileView,
         meta: { requiresAuth: true, fullBleed: true, title: 'Hồ sơ', titleKey: 'titles.profile' },
+      },
+      {
+        path: 'games',
+        name: 'cr-lobby',
+        component: CrLobbyView,
+        meta: { title: 'Capital Rivals', titleKey: 'titles.crLobby' },
+      },
+      {
+        path: 'games/cr/:code',
+        name: 'cr-room',
+        component: CrRoomView,
+        meta: { fullBleed: true, title: 'Capital Rivals', titleKey: 'titles.crRoom' },
+      },
+      {
+        path: 'games/tour/studio',
+        name: 'tour-studio',
+        component: TourAssetStudio,
+        meta: { title: 'JB Tour assets', titleKey: 'titles.tourStudio' },
       },
     ],
   },

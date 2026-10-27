@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  optimizeDeps: {
+    include: ['three', 'three/addons/loaders/GLTFLoader.js'],
+  },
   server: {
     proxy: {
       '/api': {
