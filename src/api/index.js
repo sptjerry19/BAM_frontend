@@ -150,8 +150,11 @@ function crHeaders(token) {
   return token ? { 'X-Player-Token': token } : {}
 }
 
-export const createCrRoom = (name) =>
-  api.post(`${AUTH}/games/cr/rooms`, { name }).then((r) => r.data)
+export const createCrRoom = (name, options = {}) =>
+  api.post(`${AUTH}/games/cr/rooms`, { name, ...options }).then((r) => r.data)
+
+export const performCrAction = (code, token, action, tileIndex) =>
+  api.post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/action`, { action, ...(tileIndex === undefined ? {} : { tile_index: tileIndex }) }, { headers: crHeaders(token) }).then((r) => r.data)
 
 export const joinCrRoom = (code, { name, playerToken } = {}) =>
   api
@@ -191,9 +194,9 @@ export const rollCrRoom = (code, token) =>
     .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/roll`, {}, { headers: crHeaders(token) })
     .then((r) => r.data)
 
-export const buyCrTile = (code, token) =>
+export const buyCrTile = (code, token, level = 1) =>
   api
-    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/buy`, {}, { headers: crHeaders(token) })
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/buy`, { level }, { headers: crHeaders(token) })
     .then((r) => r.data)
 
 export const skipCrTile = (code, token) =>

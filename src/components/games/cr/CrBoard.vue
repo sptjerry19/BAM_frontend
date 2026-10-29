@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onUnmounted, reactive, ref, watch } from 'vue'
-import TourHouse from '../tour/TourHouse.vue'
-import TourPawn from '../tour/TourPawn.vue'
-import { CR_BG, crTileArt } from './crArt'
+import CrAssetPawn from './CrAssetPawn.vue'
+import CrAssetProp from './CrAssetProp.vue'
+import { vietnamTileName } from './vietnamTiles'
+import { boardSide, boardCell, forwardPath } from './boardLayout'
+import { useLocale } from '../../../composables/useLocale'
 
 const STEP_MS = 200
 const MAX_STEPS = 12
@@ -13,9 +15,17 @@ const props = defineProps({
   properties: { type: Array, default: () => [] },
   currentSeat: { type: [Number, String], default: null },
   youSeat: { type: [Number, String], default: null },
+  festivals: { type: Object, default: () => ({}) },
+  selecting: { type: Boolean, default: false },
+  selectableTiles: { type: Array, default: () => [] },
+  selectedTile: { type: Number, default: -1 },
+  selectionBusy: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['walking'])
+const emit = defineEmits(['walking', 'select-tile'])
+const { locale } = useLocale()
+const money = (value) => '$' + new Intl.NumberFormat(locale.value === 'vi' ? 'vi-VN' : 'en-US').format(Number(value) || 0)
+const selectable = computed(() => new Set(props.selectableTiles.map(Number)))
 
 const SKIN = { ace: '#2563eb', ruby: '#db2777', kiwi: '#65a30d', blaze: '#ea580c' }
 
@@ -30,23 +40,8 @@ const GROUPS = {
   navy: '#1e3a8a',
 }
 
-function cell(index) {
-  if (index <= 10) return { row: 11, col: 11 - index }
-  if (index <= 20) return { row: 21 - index, col: 1 }
-  if (index <= 30) return { row: 1, col: index - 19 }
-  return { row: index - 29, col: 11 }
-}
-
-function pathForward(from, to) {
-  const steps = []
-  let i = ((Number(from) % 40) + 40) % 40
-  const dest = ((Number(to) % 40) + 40) % 40
-  while (i !== dest) {
-    i = (i + 1) % 40
-    steps.push(i)
-  }
-  return steps
-}
+const tileCount = computed(() => props.tiles.length || 32)
+const edge = computed(() => boardSide(tileCount.value) - 1)
 
 const reduceMotion = typeof window !== 'undefined'
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -74,7 +69,7 @@ watch(
         continue
       }
       if (displayPos[p.id] === target) continue
-      const steps = pathForward(displayPos[p.id], target)
+      const steps = forwardPath(displayPos[p.id], target, tileCount.value)
       if (!steps.length || steps.length > MAX_STEPS) {
         displayPos[p.id] = target
         walking[p.id] = false
@@ -138,14 +133,15 @@ const playersByTile = computed(() => {
 
 const cells = computed(() =>
   (props.tiles || []).map((tile) => {
-    const pos = cell(tile.index)
+    const pos = boardCell(tile.index, tileCount.value)
     const owner = ownerByTile.value[tile.index]
     const ownerPlayer = owner ? playerBySeat.value[owner.owner_seat] : null
     const houseLevel = owner ? Math.max(1, Number(owner.level) || 0) : 0
     return {
       ...tile,
+      name: tileCount.value === 32 ? tile.name : vietnamTileName(tile.index, tile.name),
       ...pos,
-      art: crTileArt(tile),
+      side: tile.index <= edge.value ? 'south' : tile.index <= edge.value * 2 ? 'west' : tile.index <= edge.value * 3 ? 'north' : 'east',
       color: GROUPS[tile.group] || null,
       owner,
       ownerColor: owner ? SKIN[ownerPlayer?.skin] || '#94a3b8' : null,
@@ -159,167 +155,118 @@ const cells = computed(() =>
 </script>
 
 <template>
-  <div class="board" role="grid" aria-label="Capital Rivals" :style="{ '--felt': `url(${CR_BG})` }">
-    <div
-      v-for="tile in cells"
-      :key="tile.index"
-      class="cell"
-      :class="[tile.type, { current: tile.pawns.some((p) => p.seat === currentSeat), owned: !!tile.owner }]"
-      :style="{
-        gridColumn: tile.col,
-        gridRow: tile.row,
-        '--g': tile.color || 'transparent',
-      }"
-    >
-      <img class="art" :src="tile.art" :alt="tile.name" />
-      <i v-if="tile.color" class="stripe" />
-      <span class="name">{{ tile.name }}</span>
-      <span v-if="tile.price" class="price">${{ tile.price }}</span>
-      <span v-else-if="tile.amount" class="price">−${{ tile.amount }}</span>
-      <TourHouse
-        v-if="tile.owner"
-        class="house"
-        :skin="tile.ownerSkin"
-        :color="tile.ownerColor"
-        :level="tile.houseLevel"
-        :pop="tile.popHouse"
-        fill
-        compact
-      />
-      <div class="pawns">
-        <TourPawn
-          v-for="p in tile.pawns"
-          :key="p.id"
-          :skin="p.skin"
-          :size="32"
-          :anim="walking[p.id] ? 'walk' : p.seat === currentSeat ? 'idle' : 'idle'"
-          :label="p.seat === youSeat ? 'you' : ''"
-        />
+  <div class="arena">
+    <div class="board" :class="{ 'selection-mode': selecting }" role="group" aria-label="Bàn đấu World Tour Việt Nam" :style="{ '--cell-width': (83 / edge) + '%', '--cell-height': (69 / edge) + '%' }">
+      <div class="board-base" aria-hidden="true" />
+      <div class="field" aria-hidden="true"><div class="field-lines" /><span class="field-brand">VIỆT NAM<br /><b>WORLD TOUR</b></span></div>
+      <div
+        v-for="tile in cells"
+        :key="tile.index"
+        class="cell"
+        :class="[tile.side, tile.special, { corner: tile.index % edge === 0, current: tile.pawns.some((p) => p.seat === currentSeat), owned: !!tile.owner, selectable: selecting && selectable.has(Number(tile.index)), selected: selecting && selectedTile === Number(tile.index) }]"
+        :style="{ left: tile.x + '%', top: tile.y + '%', '--g': tile.color || '#a9d8e5', zIndex: tile.index % edge === 0 ? 300 + Math.round(tile.y) : Math.round(tile.y * 2) }"
+        :title="tile.price ? `${tile.name} · ${money(tile.price)}` : tile.name"
+      >
+        <div class="tile-plane" :class="tile.type">
+          <span v-if="tile.owner" class="stripe" :style="{ background: tile.ownerColor }" />
+        </div>
+        <CrAssetProp v-if="tile.type !== 'property' || tile.owner" class="art" :tile="tile" />
+        <span class="tile-copy">
+          <span class="name">{{ tile.name }}</span>
+          <span v-if="tile.price" class="price">{{ money(tile.price) }}</span>
+        </span>
+        <button v-if="selecting && selectable.has(Number(tile.index))" type="button" class="tile-target" :disabled="selectionBusy" :aria-label="tile.price ? `${tile.name} · ${money(tile.price)}` : tile.name" :aria-pressed="selectedTile === Number(tile.index)" @click="emit('select-tile', Number(tile.index))" />
+        <span v-if="tile.owner" class="owner-level" :style="{ background: tile.ownerColor }">{{ tile.houseLevel }} ★</span>
+        <span v-if="festivals[tile.index] > 1" class="festival-badge" :title="`Lễ hội: tiền thuê ×${festivals[tile.index]}`">⚑ ×{{ festivals[tile.index] }}</span>
+        <div class="pawns">
+          <CrAssetPawn
+            v-for="p in tile.pawns"
+            :key="p.id"
+            :skin="p.skin"
+            :size="40"
+            :anim="walking[p.id] ? 'walk' : p.seat === currentSeat ? 'cheer' : 'idle'"
+            :label="p.seat === youSeat ? 'Bạn' : ''"
+          />
+        </div>
       </div>
+      <div class="center-panel"><slot /></div>
     </div>
-    <div class="center">
-      <strong>Capital Rivals</strong>
-      <slot />
-    </div>
+    <div class="board-hud"><slot name="hud" /></div>
   </div>
 </template>
 
 <style scoped>
-.board {
-  display: grid;
-  grid-template-columns: repeat(11, minmax(0, 1fr));
-  grid-template-rows: repeat(11, minmax(0, 1fr));
-  aspect-ratio: 1;
-  width: min(92vw, 720px);
-  margin: 0 auto;
-  background: #0f172a;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 18px 40px rgb(15 23 42 / 0.35);
+.arena { position:relative; width:100%; container-type:inline-size; }
+.board { position:relative; width:100%; aspect-ratio:16/10; isolation:isolate; container-type:inline-size; }
+.board-base { position:absolute; inset:4% 1% 13%; background:#927f6e; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); filter:drop-shadow(0 14px 12px #39788f50); }
+.board-base::before { content:''; position:absolute; inset:0 0 8px; background:#e3d7cd; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+.field { position:absolute; inset:13% 12% 22%; background:repeating-linear-gradient(34deg,#b9d667 0 8%,#b1d061 8% 16%); clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+.field-lines { position:absolute; inset:15%; border:2px solid #e5edb24d; transform:rotate(-45deg); }
+.field-lines::after { content:''; position:absolute; inset:50% 0 auto; border-top:2px solid #e5edb24d; }
+.field-brand { position:absolute; left:50%; top:20%; transform:translateX(-50%); text-align:center; color:#496c2b60; font-size:clamp(9px,1.8cqw,22px); line-height:1.2; letter-spacing:.15em; }
+.cell { position:absolute; width:var(--cell-width); height:var(--cell-height); transform:translate(-50%,-50%); overflow:visible; pointer-events:none; }
+.tile-plane { position:absolute; inset:0; background:#ece6db; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); box-shadow:inset 0 -3px #b3a399; }
+.tile-plane::after { content:''; position:absolute; inset:2px; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); background:#fff9ef; }
+.corner .tile-plane { inset:-14%; background:#fff0a5; filter:drop-shadow(0 5px 0 #8b6c40) drop-shadow(0 0 5px #f8d17888); }
+.corner .tile-plane::after { inset:4px; background:#c4e2e9; }
+.island .tile-plane::after { background:#a8e1da; }
+.start .tile-plane::after { background:#c6eaa0; }
+.world_tour .tile-plane::after { background:#e5d5eb; }
+.championship .tile-plane::after { background:#e5d5eb; }
+.airport .tile-plane::after { background:#cbdde8; }
+.beach .tile-plane::after { background:#c2e9e6; }
+.stripe { position:absolute; inset:0; background:var(--g); z-index:1; clip-path:polygon(50% 0,100% 50%,89% 58%,50% 19%,11% 58%,0 50%); opacity:.7; }
+.current .tile-plane { background:#f7c735; filter:drop-shadow(0 0 4px #ffe267); }
+.current .tile-plane::after { inset:4px; background:#fff1b3; }
+.owned .tile-plane { background:var(--g); }
+.art { position:absolute; width:82%; height:145%; left:9%; bottom:24%; }
+.corner .art { height:230%; width:125%; left:-12.5%; bottom:24%; filter:drop-shadow(0 10px 4px #284f4766); }
+/* Project text onto the same diamond plane as the tiles (16:10 board). */
+.tile-copy { position:absolute; left:50%; top:50%; width:70.71%; aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:2px; padding:0 4% 9%; box-sizing:border-box; transform:translate(-50%,-50%) matrix(.707107,.3674,-.707107,.3674,0,0); text-align:center; color:#253747; font-size:clamp(8px,1.05cqw,14px); font-weight:750; line-height:1.08; text-shadow:0 1px #fff; pointer-events:none; }
+.west .tile-copy,.east .tile-copy { transform:translate(-50%,-50%) matrix(.707107,-.3674,.707107,.3674,0,0); }
+.corner .tile-copy { width:88%; padding-bottom:5%; font-size:clamp(9px,1.15cqw,15px); color:#173957; font-weight:850; }
+.name { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.price { font-size:clamp(10px,1.35cqw,18px); color:#172a3a; font-weight:900; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tile-target { position:absolute; inset:0; z-index:5; border:0; padding:0; background:transparent; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); cursor:pointer; pointer-events:auto; }
+.corner .tile-target { inset:-14%; }
+.selectable .tile-plane { background:#0086cc; filter:drop-shadow(0 0 4px #15b6ee); }
+.selectable .tile-plane::after { inset:4px; background:#e1f7ff; }
+.selectable:has(.tile-target:hover) .tile-plane,.selectable:has(.tile-target:focus-visible) .tile-plane,.selected .tile-plane { background:#f19b00; filter:drop-shadow(0 0 6px #ffc433); }
+.selectable:has(.tile-target:hover) .tile-plane::after,.selectable:has(.tile-target:focus-visible) .tile-plane::after,.selected .tile-plane::after { background:#ffeb9c; }
+.selection-mode .cell:not(.selectable) { opacity:.55; }
+.tile-target:disabled { cursor:wait; }
+.owner-level { position:absolute; right:0; top:10%; color:white; font-size:8px; border:1px solid white; padding:0 3px; border-radius:3px; }
+.festival-badge { position:absolute; left:0; top:-5%; color:#5f3c05; background:#ffe17b; border:1px solid #fff3be; border-radius:4px; padding:1px 3px; font-size:clamp(7px,.8cqw,11px); font-weight:850; }
+.event-symbol { position:absolute; inset:-10% 15% 20%; display:grid; place-items:center; font-size:clamp(14px,3.5cqw,42px); color:#e44d90; text-shadow:2px 2px #fff; }
+.event-symbol.tax { color:#d2a229; }
+.pawns { position:absolute; bottom:35%; left:15%; right:0; display:flex; justify-content:center; pointer-events:none; }
+.pawns > * + * { margin-left:-26px; }
+.pawns :deep(.asset-pawn) { width:clamp(16px,3.8cqw,40px)!important; }
+.center-panel { position:absolute; z-index:220; left:50%; top:44%; transform:translate(-50%,-50%); width:32%; display:flex; flex-direction:column; align-items:center; gap:9px; padding:8px; border-radius:12px; background:#ebf7e4d9; box-shadow:0 3px 14px #4d704b24; }
+.board-hud { position:absolute; inset:0; pointer-events:none; }
+.board-hud :slotted(.hud) { pointer-events:none; }
+@media(max-width:760px) {
+  .arena { padding:65px 0 80px; }
+  .board-hud { inset:0 0 auto; height:100%; }
+  .center-panel { gap:5px; }
+  .tile-copy { font-size:1.3cqw; gap:1px; }
+  .corner .tile-copy { font-size:1.4cqw; }
+  .price { font-size:1.6cqw; }
+  .owner-level,.festival-badge { font-size:1.2cqw; padding:0 2px; }
 }
-.cell {
-  position: relative;
-  min-height: 0;
-  padding: 3px;
-  background: #1e293b;
-  color: #f8fafc;
-  font-size: 9px;
-  line-height: 1.15;
-  border: 1px solid #0f172a;
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-  text-shadow: 0 1px 2px #0f172a;
+@media(orientation:landscape) and (max-height:600px) and (max-width:1100px) {
+  .arena { flex:1; min-height:0; padding:0; container-type:size; }
+  /* Include the tall corner artwork above the diamond when fitting its height. */
+  .board { position:absolute; width:min(calc(100cqw - 200px),150cqh); left:calc(50% - 94px); top:58%; transform:translate(-50%,-50%); }
+  .board-hud { inset:0; height:auto; }
+  .tile-copy { font-size:1.15cqw; gap:1px; }
+  .corner .tile-copy { font-size:1.3cqw; }
+  .price { font-size:1.5cqw; }
+  .owner-level,.festival-badge { font-size:1.1cqw; padding:0 2px; }
+  .center-panel { left:calc(100% + 12px); top:50%; transform:translateY(-50%); width:176px; box-sizing:border-box; gap:3px; padding:4px; background:transparent; box-shadow:none; }
+  .center-panel :deep(.dice) { gap:16px; padding:4px 8px 0; }
+  .center-panel :deep(.die) { padding-bottom:0; }
+  .center-panel :deep(.value) { margin-top:6px; font-size:10px; }
 }
-.art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 40%;
-  opacity: 0.92;
-  pointer-events: none;
-}
-.cell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgb(15 23 42 / 0.15), rgb(15 23 42 / 0.55));
-  pointer-events: none;
-}
-.cell.start,
-.cell.chance,
-.cell.tax,
-.cell.service,
-.cell.detention,
-.cell.go_to_detention,
-.cell.rest {
-  background: #1e293b;
-}
-.cell.current { outline: 2px solid #fbbf24; outline-offset: -2px; z-index: 1; }
-.cell.owned {
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--g) 70%, white);
-  z-index: 4;
-}
-.cell.owned .art { opacity: 0.28; }
-.cell.owned .name,
-.cell.owned .price { font-size: 8px; max-width: 46%; }
-.stripe {
-  height: 6px;
-  background: var(--g);
-  margin: -3px -3px 3px;
-  z-index: 1;
-}
-.name,
-.price {
-  position: relative;
-  z-index: 1;
-}
-.name {
-  font-weight: 650;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.price { opacity: 0.9; }
-.house {
-  position: absolute;
-  inset: 6% 2% 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.pawns {
-  margin-top: auto;
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
-  position: relative;
-  z-index: 3;
-}
-.center {
-  grid-column: 2 / 11;
-  grid-row: 2 / 11;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #f8fafc;
-  background:
-    linear-gradient(180deg, rgb(15 23 42 / 0.42), rgb(15 23 42 / 0.62)),
-    var(--felt) center / cover no-repeat;
-}
-.center strong {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  text-shadow: 0 2px 8px #0f172a;
-}
-@media (max-width: 720px) {
-  .name { font-size: 0; }
-  .price { display: none; }
-}
+@media(prefers-reduced-motion:reduce) { * { animation:none!important; } }
 </style>

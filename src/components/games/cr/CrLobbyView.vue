@@ -14,6 +14,8 @@ const name = ref(user.value?.name || '')
 const code = ref('')
 const busy = ref(false)
 const error = ref('')
+const entryFee = ref(100000)
+const winningsTarget = ref(3000000)
 
 function fail(e) {
   error.value = e?.api?.message || e?.message || t('games.cr.error')
@@ -23,7 +25,7 @@ async function createRoom() {
   busy.value = true
   error.value = ''
   try {
-    const data = persistCrSession(await createCrRoom(name.value.trim() || undefined))
+    const data = persistCrSession(await createCrRoom(name.value.trim() || undefined, { entry_fee: entryFee.value, winnings_target: winningsTarget.value }))
     await router.push({ name: 'cr-room', params: { code: data.room.code } })
   } catch (e) {
     fail(e)
@@ -67,6 +69,15 @@ async function joinRoom() {
       <input v-model="name" maxlength="32" :placeholder="t('games.cr.namePlaceholder')" />
     </label>
 
+    <label class="field">
+      <span>{{ t('games.cr.entryFee') }}</span>
+      <input v-model.number="entryFee" type="number" min="0" max="1000000" step="10000" />
+    </label>
+    <label class="field">
+      <span>{{ t('games.cr.winningsTarget') }}</span>
+      <input v-model.number="winningsTarget" type="number" min="1500000" max="100000000" step="100000" />
+    </label>
+    <p class="lede">{{ t('games.cr.virtualRules') }}</p>
     <div class="actions">
       <button type="button" class="btn-primary" :disabled="busy" @click="createRoom">
         {{ t('games.cr.create') }}
