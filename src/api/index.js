@@ -145,3 +145,99 @@ export const attachMemberEquipment = (memberId, productId) =>
   api.post(`${AUTH}/members/${memberId}/equipment/${productId}`).then((r) => r.data)
 export const detachMemberEquipment = (memberId, productId) =>
   api.delete(`${AUTH}/members/${memberId}/equipment/${productId}`).then((r) => r.data)
+
+function crHeaders(token) {
+  return token ? { 'X-Player-Token': token } : {}
+}
+
+export const createCrRoom = (name, options = {}) =>
+  api.post(`${AUTH}/games/cr/rooms`, { name, ...options }).then((r) => r.data)
+
+export const performCrAction = (code, token, action, tileIndex) =>
+  api.post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/action`, { action, ...(tileIndex === undefined ? {} : { tile_index: tileIndex }) }, { headers: crHeaders(token) }).then((r) => r.data)
+
+export const joinCrRoom = (code, { name, playerToken } = {}) =>
+  api
+    .post(
+      `${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/join`,
+      { name, player_token: playerToken || undefined },
+      { headers: crHeaders(playerToken) },
+    )
+    .then((r) => r.data)
+
+export const readyCrRoom = (code, token, ready = true) =>
+  api
+    .post(
+      `${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/ready`,
+      { ready },
+      { headers: crHeaders(token) },
+    )
+    .then((r) => r.data)
+
+export const startCrRoom = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/start`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const leaveCrRoom = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/leave`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const getCrSnapshot = (code, token) =>
+  api
+    .get(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}`, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const rollCrRoom = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/roll`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const buyCrTile = (code, token, level = 1) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/buy`, { level }, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const skipCrTile = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/skip`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const payCrDue = (code, token, idempotencyKey) =>
+  api
+    .post(
+      `${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/pay`,
+      { idempotency_key: idempotencyKey || undefined },
+      { headers: { ...crHeaders(token), ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) } },
+    )
+    .then((r) => r.data)
+
+export const drawCrCard = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/card`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const upgradeCrTile = (code, token, tileIndex) =>
+  api
+    .post(
+      `${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/upgrade`,
+      { tile_index: tileIndex },
+      { headers: crHeaders(token) },
+    )
+    .then((r) => r.data)
+
+export const endCrTurn = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/end-turn`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const bankruptCr = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/bankrupt`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)
+
+export const tickCrRoom = (code, token) =>
+  api
+    .post(`${AUTH}/games/cr/rooms/${encodeURIComponent(code)}/tick`, {}, { headers: crHeaders(token) })
+    .then((r) => r.data)

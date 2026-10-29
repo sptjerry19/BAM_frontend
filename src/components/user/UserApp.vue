@@ -40,6 +40,7 @@ const publicNavItems = computed(() => [
   { name: 'shop', label: t('nav.shop'), icon: 'shuttlecock' },
   { name: 'news', label: t('nav.news'), icon: 'news' },
   { name: 'rankings', label: t('nav.rankings'), icon: 'trophy' },
+  { name: 'cr-lobby', label: t('nav.games'), icon: 'spark' },
   { name: 'top-products', label: t('nav.topProducts'), icon: 'chart' },
   { name: 'favorites', label: t('nav.favorites'), icon: 'heart' },
 ])

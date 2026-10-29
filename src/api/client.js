@@ -57,7 +57,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       const url = String(error.config?.url || '')
-      const isAuthEndpoint = /\/auth\/(login|register|forgot-password|reset-password)/.test(url)
+      const isAuthEndpoint = /\/auth\/(login|register|forgot-password|reset-password)|\/games\/cr\//.test(url)
       if (!isAuthEndpoint) {
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem('bm_user')

@@ -1,0 +1,441 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "JB Tour asset kit"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "dice",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Root",
+      "children": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "name": "Cube",
+      "mesh": 1
+    },
+    {
+      "name": "Pip1",
+      "mesh": 0,
+      "translation": [
+        0,
+        0,
+        0.57
+      ]
+    },
+    {
+      "name": "Pip2",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        -0.28,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip3",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        -0.28,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip4",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        0,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip5",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        0,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip6",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        0.28,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip7",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        0.28,
+        -0.57
+      ]
+    },
+    {
+      "name": "Pip8",
+      "mesh": 0,
+      "translation": [
+        0.57,
+        -0.26,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip9",
+      "mesh": 0,
+      "translation": [
+        0.57,
+        0.26,
+        0.26
+      ]
+    },
+    {
+      "name": "Pip10",
+      "mesh": 0,
+      "translation": [
+        -0.57,
+        -0.26,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip11",
+      "mesh": 0,
+      "translation": [
+        -0.57,
+        -0.26,
+        0.26
+      ]
+    },
+    {
+      "name": "Pip12",
+      "mesh": 0,
+      "translation": [
+        -0.57,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Pip13",
+      "mesh": 0,
+      "translation": [
+        -0.57,
+        0.26,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip14",
+      "mesh": 0,
+      "translation": [
+        -0.57,
+        0.26,
+        0.26
+      ]
+    },
+    {
+      "name": "Pip15",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        0.57,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip16",
+      "mesh": 0,
+      "translation": [
+        0,
+        0.57,
+        0
+      ]
+    },
+    {
+      "name": "Pip17",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        0.57,
+        0.26
+      ]
+    },
+    {
+      "name": "Pip18",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        -0.57,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip19",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        -0.57,
+        -0.26
+      ]
+    },
+    {
+      "name": "Pip20",
+      "mesh": 0,
+      "translation": [
+        -0.26,
+        -0.57,
+        0.26
+      ]
+    },
+    {
+      "name": "Pip21",
+      "mesh": 0,
+      "translation": [
+        0.26,
+        -0.57,
+        0.26
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.99,
+          0.99,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.22
+      }
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.07,
+          0.12,
+          0.38,
+          1.0
+        ],
+        "metallicFactor": 0.05,
+        "roughnessFactor": 0.35
+      }
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "min": [
+        -0.14,
+        -0.14,
+        -0.05
+      ],
+      "max": [
+        0.14,
+        0.14,
+        0.05
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "min": [
+        -0.525,
+        -0.525,
+        -0.525
+      ],
+      "max": [
+        0.525,
+        0.525,
+        0.525
+      ]
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 5,
+      "type": "SCALAR",
+      "min": [
+        0
+      ],
+      "max": [
+        0.5
+      ]
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 5,
+      "type": "VEC4"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 288,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 576,
+      "byteLength": 72,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 648,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 936,
+      "byteLength": 288,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1224,
+      "byteLength": 72,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1296,
+      "byteLength": 20
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1316,
+      "byteLength": 80,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1396,
+      "uri": "data:application/octet-stream;base64,KVwPvilcDz7NzEy9KVwPPilcDz7NzEy9KVwPPilcDz7NzEw9KVwPvilcDz7NzEw9KVwPvilcD77NzEw9KVwPPilcD77NzEw9KVwPPilcD77NzEy9KVwPvilcD77NzEy9KVwPvilcD77NzEw9KVwPvilcDz7NzEw9KVwPPilcDz7NzEw9KVwPPilcD77NzEw9KVwPPilcD77NzEy9KVwPPilcDz7NzEy9KVwPvilcDz7NzEy9KVwPvilcD77NzEy9KVwPPilcD77NzEw9KVwPPilcDz7NzEw9KVwPPilcDz7NzEy9KVwPPilcD77NzEy9KVwPvilcD77NzEy9KVwPvilcDz7NzEy9KVwPvilcDz7NzEw9KVwPvilcD77NzEw9AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcAZmYGv2ZmBj9mZga/ZmYGP2ZmBj9mZga/ZmYGP2ZmBj9mZgY/ZmYGv2ZmBj9mZgY/ZmYGv2ZmBr9mZgY/ZmYGP2ZmBr9mZgY/ZmYGP2ZmBr9mZga/ZmYGv2ZmBr9mZga/ZmYGv2ZmBr9mZgY/ZmYGv2ZmBj9mZgY/ZmYGP2ZmBj9mZgY/ZmYGP2ZmBr9mZgY/ZmYGP2ZmBr9mZga/ZmYGP2ZmBj9mZga/ZmYGv2ZmBj9mZga/ZmYGv2ZmBr9mZga/ZmYGP2ZmBr9mZgY/ZmYGP2ZmBj9mZgY/ZmYGP2ZmBj9mZga/ZmYGP2ZmBr9mZga/ZmYGv2ZmBr9mZga/ZmYGv2ZmBj9mZga/ZmYGv2ZmBj9mZgY/ZmYGv2ZmBr9mZgY/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcAAAAAAI/C9T2PwnU+7FG4PgAAAD8AAAAAAAAAAAAAAAAAAIA/cw9eP3MPXj8AAAAAosH+PgAAAABK+1w/SvtcP5g9Ab8SacM+AAAAABJpwz4Vn2y/AAAAAPMENT8AAAAA8wQ1Pw=="
+    }
+  ],
+  "animations": [
+    {
+      "name": "roll",
+      "samplers": [
+        {
+          "input": 6,
+          "output": 7,
+          "interpolation": "LINEAR"
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "node": 0,
+            "path": "rotation"
+          }
+        }
+      ]
+    }
+  ]
+}
