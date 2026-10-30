@@ -54,6 +54,7 @@ const animationDelay = (ms) => new Promise((resolve) => setTimeout(resolve, redu
 const boardWalking = ref(false)
 const purchaseLevel = ref(1)
 const destination = ref(-1)
+const manualBoardAction = ref(null)
 const landscapeQuery = typeof window !== 'undefined' ? window.matchMedia('(orientation: landscape) and (max-height: 600px) and (max-width: 1100px)') : null
 const compactLandscape = ref(landscapeQuery?.matches ?? false)
 const updateOrientation = (event) => { compactLandscape.value = event.matches }
@@ -66,6 +67,7 @@ const code = computed(() => String(route.params.code || '').toUpperCase())
 const token = computed(() => readCrToken(code.value))
 const room = computed(() => snapshot.value?.room || null)
 const modernRules = computed(() => Number(room.value?.rules_version || 1) >= 2)
+const specRules = computed(() => Number(room.value?.rules_version || 1) >= 3)
 const players = computed(() => snapshot.value?.players || [])
 const tiles = computed(() => (snapshot.value?.tiles || []).map((tile) => ({ ...tile, name: tile.legacy_index !== undefined ? vietnamTileName(tile.legacy_index, tile.name) : snapshot.value.tiles.length === 32 ? tile.name : vietnamTileName(tile.index, tile.name) })))
 const properties = computed(() => snapshot.value?.properties || [])
@@ -100,6 +102,7 @@ const currentName = computed(
 const winner = computed(() =>
   players.value.find((p) => p.seat === room.value?.winner_seat) || null,
 )
+const winners = computed(() => (room.value?.winner_seats || [room.value?.winner_seat]).map((seat) => players.value.find((p) => p.seat === seat)).filter(Boolean))
 const secondsLeft = computed(() => {
   if (!started.value || finished.value || !room.value?.turn_deadline) return null
   return Math.max(0, Math.ceil((Date.parse(room.value.turn_deadline) - nowTs.value) / 1000))
@@ -109,7 +112,7 @@ const buyOpen = computed(
   () => Boolean(cardStage.value === 'idle' && !boardWalking.value && you.value?.can_buy && pending.value?.action === 'buy'),
 )
 const payOpen = computed(
-  () => Boolean(cardStage.value === 'idle' && !boardWalking.value && you.value?.can_pay && pending.value?.action === 'pay'),
+  () => Boolean(cardStage.value === 'idle' && !boardWalking.value && you.value?.can_pay && pending.value?.action === (specRules.value ? 'debt' : 'pay')),
 )
 const cardOpen = computed(
   () => Boolean(!boardWalking.value && you.value?.can_draw && pending.value?.action === 'card'),
@@ -119,12 +122,35 @@ const upgrades = computed(() => (you.value?.upgrades || []).map((option) => ({ .
 const buyingHouse = computed(() => tiles.value.find((tile) => Number(tile.index) === Number(pending.value?.tile))?.type === 'property')
 const purchaseOptions = computed(() => you.value?.purchase_options || [])
 const purchasePrice = computed(() => purchaseOptions.value.find((option) => option.level === purchaseLevel.value)?.price ?? pending.value?.price ?? 0)
-const destinationOptions = computed(() => tiles.value.filter((tile) => Number(tile.index) !== Number(me.value?.position) && (pending.value?.action !== 'festival' || tile.type === 'property')))
-const destinationOpen = computed(() => you.value?.can_choose_destination && !boardWalking.value && cardStage.value === 'idle')
+const boardChoice = computed(() => {
+  if (!you.value?.is_turn || boardWalking.value || cardStage.value !== 'idle') return null
+  if (pending.value?.action === 'debt' && !you.value?.can_pay) {
+    return { action: 'liquidate', targets: properties.value.filter((p) => p.owner_seat === you.value.seat).map((p) => p.tile_index), title: 'Chọn tài sản cần bán', help: 'Chọn trực tiếp một ô của bạn trên bàn để thanh lý 50% giá trị.' }
+  }
+  if (pending.value?.action === 'build' && you.value?.can_upgrade) {
+    return { action: 'build', targets: upgrades.value.map((p) => p.tile), title: 'Chọn ô cần xây nhà', help: 'Chọn ô đang được viền sáng rồi xác nhận xây cấp tiếp theo.' }
+  }
+  if (you.value?.can_choose_destination) {
+    const labels = {
+      tour: ['Chọn điểm đến World Tour', `Phí di chuyển $${money(room.value?.travel_fee)}. Chỉ chọn đất trống hoặc tài sản của bạn.`],
+      championship: ['Chọn thành phố đăng cai', 'Chọn một thành phố thuộc sở hữu của bạn.'],
+      chance_target: ['Chọn mục tiêu thẻ Cơ hội', 'Các mục tiêu hợp lệ đang được viền sáng.'],
+    }
+    const [title, help] = labels[pending.value?.action] || [t('games.cr.chooseTravel'), t('games.cr.selectOnBoard')]
+    return { action: pending.value?.action, targets: you.value?.targets || [], title, help }
+  }
+  if (manualBoardAction.value === 'use_shield') {
+    const targets = properties.value.filter((p) => p.owner_seat === you.value.seat && !p.shield && tiles.value.find((t) => t.index === p.tile_index)?.type === 'property').map((p) => p.tile_index)
+    return { action: 'use_shield', targets, title: 'Chọn thành phố đặt lá chắn', help: 'Lá chắn chặn một lần Mất điện hoặc Động đất.' }
+  }
+  return null
+})
+const destinationOptions = computed(() => tiles.value.filter((tile) => (boardChoice.value?.targets || []).map(Number).includes(Number(tile.index))))
+const destinationOpen = computed(() => Boolean(boardChoice.value))
 const takeoverOpen = computed(() => you.value?.can_takeover && !boardWalking.value && cardStage.value === 'idle')
 const selectedDestination = computed(() => destinationOptions.value.find((tile) => Number(tile.index) === destination.value))
-watch(() => `${pending.value?.action}:${pending.value?.tile}`, () => { destination.value = -1 })
-watch(() => pending.value?.tile, () => { purchaseLevel.value = 1 })
+watch(() => `${pending.value?.action}:${pending.value?.tile}`, () => { destination.value = -1; manualBoardAction.value = null })
+watch(() => pending.value?.tile, () => { purchaseLevel.value = specRules.value ? 0 : 1 })
 const cardDestination = computed(() => {
   if (!['move', 'go_start'].includes(revealedCard.value?.kind)) return ''
   return tiles.value.find((tile) => Number(tile.index) === revealedCard.value.position_after)?.name || ''
@@ -222,7 +248,7 @@ async function roll(isReroll = false) {
   }
 }
 async function buy() {
-  await act(() => buyCrTile(code.value, token.value, buyingHouse.value ? purchaseLevel.value : 1))
+  await act(() => buyCrTile(code.value, token.value, buyingHouse.value ? purchaseLevel.value : (specRules.value ? 0 : 1)))
 }
 async function gameAction(action, tileIndex) {
   if (boardWalking.value) return
@@ -231,6 +257,20 @@ async function gameAction(action, tileIndex) {
 function selectDestination(index) {
   if (!destinationOpen.value || busy.value || !destinationOptions.value.some((tile) => Number(tile.index) === index)) return
   destination.value = index
+}
+async function confirmBoardChoice() {
+  const action = boardChoice.value?.action
+  if (!selectedDestination.value || !action) return
+  if (action === 'build') await upgrade(destination.value)
+  else await gameAction(action === 'tour' ? 'travel' : action, destination.value)
+  manualBoardAction.value = null
+  destination.value = -1
+}
+function cancelBoardChoice() {
+  if (manualBoardAction.value) {
+    manualBoardAction.value = null
+    destination.value = -1
+  } else if (you.value?.can_skip) skip()
 }
 async function skip() {
   await act(() => skipCrTile(code.value, token.value))
@@ -275,6 +315,10 @@ async function endTurn() {
 async function bankrupt() {
   if (!window.confirm(t('games.cr.bankruptConfirm'))) return
   await act(() => bankruptCr(code.value, token.value))
+}
+async function surrender() {
+  if (!window.confirm('Bạn chắc chắn muốn đầu hàng? Tiền và tài sản còn lại sẽ trả về ngân hàng.')) return
+  await gameAction('surrender')
 }
 
 async function leave() {
@@ -365,7 +409,7 @@ watch(code, () => {
           <span v-else>{{ room.status }}</span>
           <span v-if="room.max_turns"> · {{ t('games.cr.turns', { n: room.turns_played, max: room.max_turns }) }}</span>
         </p>
-        <p v-if="room && modernRules" class="status">{{ t('games.cr.potLabel', { amount: money(room.pot), fee: money(room.entry_fee) }) }}</p>
+        <p v-if="room && modernRules && !specRules" class="status">{{ t('games.cr.potLabel', { amount: money(room.pot), fee: money(room.entry_fee) }) }}</p>
       </div>
     </header>
 
@@ -409,20 +453,21 @@ watch(code, () => {
         </ul>
       </template>
       <div v-if="destinationOpen" class="board-selection" aria-live="polite">
-        <strong>{{ t(pending.action === 'festival' ? 'games.cr.chooseFestival' : 'games.cr.chooseTravel') }}</strong>
+        <strong>{{ boardChoice.title }}</strong>
         <p>{{ t('games.cr.selectOnBoard') }}</p>
-        <small>{{ t(pending.action === 'festival' ? 'games.cr.festivalHelp' : 'games.cr.travelHelp', { fee: money(room.travel_fee) }) }}</small>
+        <small>{{ boardChoice.help }}</small>
         <b v-if="selectedDestination" class="chosen-destination">{{ selectedDestination.name }}</b>
         <div class="bar">
-          <button class="btn-primary" type="button" :disabled="busy || !selectedDestination || (pending.action === 'travel' && (me?.cash ?? 0) < room.travel_fee)" @click="gameAction(pending.action, destination)">{{ t('games.cr.confirmChoice') }}</button>
-          <button class="btn-secondary" type="button" :disabled="busy" @click="skip">{{ t('games.cr.skip') }}</button>
+          <button class="btn-primary" type="button" :disabled="busy || !selectedDestination || (boardChoice.action === 'tour' && (me?.cash ?? 0) < room.travel_fee)" @click="confirmBoardChoice">{{ boardChoice.action === 'liquidate' ? 'Bán tài sản' : boardChoice.action === 'build' ? 'Xây nhà' : t('games.cr.confirmChoice') }}</button>
+          <button v-if="manualBoardAction || you?.can_skip" class="btn-secondary" type="button" :disabled="busy" @click="cancelBoardChoice">{{ manualBoardAction ? 'Hủy' : t('games.cr.skip') }}</button>
+          <button v-if="boardChoice.action === 'liquidate'" class="btn-ghost" type="button" :disabled="busy" @click="surrender">Đầu hàng</button>
         </div>
       </div>
       <div v-if="!finished && !destinationOpen" class="gui-stats">
         <div class="timer" :class="{ low: secondsLeft !== null && secondsLeft <= 8 }">
           <span aria-hidden="true">◷</span> {{ secondsLeft === null ? '—' : secondsLeft }}s
         </div>
-        <div class="gold">${{ money(me?.cash) }}<small v-if="modernRules"> · ◆ {{ me?.gold ?? 0 }}</small></div>
+        <div class="gold">${{ money(me?.cash) }}<small v-if="modernRules && !specRules"> · ◆ {{ me?.gold ?? 0 }}</small></div>
       </div>
       <CrDice v-if="!destinationOpen" :values="dice" :rolling="rolling" :size="compactLandscape ? 26 : 48" />
       <div v-if="!finished && !destinationOpen" class="bar">
@@ -432,21 +477,14 @@ watch(code, () => {
         <button v-if="you?.can_confirm_roll" type="button" class="btn-primary" :disabled="busy" @click="gameAction('confirm_roll')">{{ t('games.cr.confirmRoll') }}</button>
         <button v-if="you?.can_confirm_roll" type="button" class="btn-secondary" :disabled="busy || !you?.can_reroll" @click="roll(true)">{{ t('games.cr.reroll', { gold: room.reroll_cost }) }}</button>
         <template v-if="you?.can_wait_island">
-          <p class="island-status">{{ t('games.cr.islandRemaining', { turns: me?.island_turns }) }}</p>
-          <button type="button" class="btn-primary" :disabled="busy || !you?.can_escape_island" @click="gameAction('escape_island')">{{ t('games.cr.escapeIsland', { fee: money(room.island_fee) }) }}</button>
-          <button type="button" class="btn-secondary" :disabled="busy" @click="gameAction('wait_island')">{{ t('games.cr.waitIsland') }}</button>
+          <p class="island-status">Đảo hoang · {{ pending?.failures || 0 }}/3 lần gieo thất bại</p>
+          <button type="button" class="btn-primary" :disabled="busy || !you?.can_escape_island" @click="gameAction(specRules ? 'island_pay' : 'escape_island')">{{ t('games.cr.escapeIsland', { fee: money(room.island_fee) }) }}</button>
+          <button type="button" class="btn-secondary" :disabled="busy" @click="gameAction(specRules ? 'island_roll' : 'wait_island')">{{ specRules ? 'Gieo đôi để thoát' : t('games.cr.waitIsland') }}</button>
+          <button v-if="you?.can_use_escape_card" type="button" class="btn-secondary" :disabled="busy" @click="gameAction('use_escape_card')">Dùng Vé thoát đảo</button>
         </template>
-        <template v-if="you?.can_upgrade">
-          <button
-            v-for="opt in upgrades"
-            :key="opt.tile"
-            type="button"
-            class="btn-secondary"
-            :disabled="busy"
-            @click="upgrade(opt.tile)"
-          >
-            {{ modernRules ? t('games.cr.upgradeRule', { name: opt.name, level: opt.level + 1, cost: money(opt.cost) }) : t('games.cr.upgradeBtn', { name: opt.name, cost: opt.cost }) }}
-          </button>
+        <button v-if="specRules && you?.can_use_shield" type="button" class="btn-secondary" :disabled="busy" @click="manualBoardAction = 'use_shield'">Chọn ô đặt lá chắn</button>
+        <template v-if="you?.can_upgrade && !specRules">
+          <button v-for="opt in upgrades" :key="opt.tile" type="button" class="btn-secondary" :disabled="busy" @click="upgrade(opt.tile)">{{ t('games.cr.upgradeBtn', { name: opt.name, cost: opt.cost }) }}</button>
         </template>
         <button v-if="you?.can_skip && !you?.can_buy && !destinationOpen && !takeoverOpen" type="button" class="btn-secondary" :disabled="busy" @click="skip">{{ t('games.cr.skip') }}</button>
         <button v-if="you?.can_accept_winnings" type="button" class="btn-primary" :disabled="busy" @click="gameAction('accept_winnings')">{{ t('games.cr.acceptWinnings') }}</button>
@@ -456,6 +494,7 @@ watch(code, () => {
         <button v-if="you?.can_bankrupt && !finished" type="button" class="btn-ghost" :disabled="busy" @click="bankrupt">
           {{ t('games.cr.bankrupt') }}
         </button>
+        <button v-if="specRules && you?.is_turn && !finished && pending?.action !== 'debt'" type="button" class="btn-ghost" :disabled="busy" @click="surrender">Đầu hàng</button>
       </div>
     </CrBoard>
 
@@ -487,13 +526,15 @@ watch(code, () => {
 
     <div v-if="payOpen" class="overlay" role="dialog" aria-modal="true">
       <div class="dialog">
-        <h2>{{ t('games.cr.payTitle') }}</h2>
-        <p>{{ t('games.cr.payPrompt', { name: pending.name, amount: pending.amount }) }}</p>
+        <h2>{{ specRules ? 'Xử lý công nợ' : t('games.cr.payTitle') }}</h2>
+        <p v-if="specRules">Bạn phải thanh toán đủ ${{ money(pending.amount) }} ({{ pending.reason }}).</p>
+        <p v-else>{{ t('games.cr.payPrompt', { name: pending.name, amount: pending.amount }) }}</p>
         <p class="cash">{{ t('games.cr.yourCash', { cash: me?.cash ?? 0 }) }}</p>
         <div class="bar">
-          <button type="button" class="btn-primary" :disabled="busy" @click="pay">
+          <button type="button" class="btn-primary" :disabled="busy || !you?.can_pay" @click="pay">
             {{ t('games.cr.pay') }} ${{ pending.amount }}
           </button>
+          <button v-if="specRules" type="button" class="btn-ghost" :disabled="busy" @click="gameAction('surrender')">Đầu hàng</button>
         </div>
       </div>
     </div>
@@ -522,7 +563,7 @@ watch(code, () => {
         <div v-if="buyingHouse" class="house-options" role="radiogroup" :aria-label="t('games.cr.chooseHouse')">
           <button v-for="option in purchaseOptions" :key="option.level" type="button" class="house-option" role="radio" :aria-checked="purchaseLevel === option.level" :class="{ selected: purchaseLevel === option.level }" :disabled="busy || option.price > (me?.cash ?? 0)" @click="purchaseLevel = option.level">
             <CrHouseSprite :level="option.level" :skin="me?.skin || 'ace'" />
-            <strong>{{ t('games.cr.houseLevel', { level: option.level }) }}</strong>
+            <strong>{{ option.level === 0 ? 'Chỉ mua đất' : t('games.cr.houseLevel', { level: option.level }) }}</strong>
             <span>${{ option.price }}</span>
             <small v-if="option.price > (me?.cash ?? 0)">{{ t('games.cr.cannotAffordHouse') }}</small>
           </button>
@@ -542,9 +583,9 @@ watch(code, () => {
     <div v-if="finished && winner" class="overlay">
       <div class="dialog win">
         <p class="eyebrow">{{ t('games.cr.title') }}</p>
-        <h2>{{ t('games.cr.winner', { name: winner.name }) }}</h2>
+        <h2>{{ winners.length > 1 ? `Đồng hạng: ${winners.map((p) => p.name).join(', ')}` : t('games.cr.winner', { name: winner.name }) }}</h2>
         <p>{{ t(`games.cr.winReason.${room.win_reason || 'last_standing'}`) }}</p>
-        <p v-if="modernRules">{{ t('games.cr.winningsAwarded', { amount: money(winner.winnings) }) }}</p>
+        <p v-if="modernRules && !specRules">{{ t('games.cr.winningsAwarded', { amount: money(winner.winnings) }) }}</p>
         <button type="button" class="btn-primary" @click="leave">{{ t('games.cr.leave') }}</button>
       </div>
     </div>

@@ -30,6 +30,8 @@ const selectable = computed(() => new Set(props.selectableTiles.map(Number)))
 const SKIN = { ace: '#2563eb', ruby: '#db2777', kiwi: '#65a30d', blaze: '#ea580c' }
 
 const GROUPS = {
+  A: '#92400e', B: '#0284c7', C: '#e11d48', D: '#d97706',
+  E: '#be123c', F: '#ca8a04', G: '#15803d', H: '#1e3a8a',
   umber: '#92400e',
   sky: '#0284c7',
   rose: '#e11d48',
@@ -137,16 +139,20 @@ const cells = computed(() =>
     const owner = ownerByTile.value[tile.index]
     const ownerPlayer = owner ? playerBySeat.value[owner.owner_seat] : null
     const houseLevel = owner ? Math.max(1, Number(owner.level) || 0) : 0
+    const landingFee = owner?.rent ?? (tile.type === 'property' ? tile.base_rent : tile.type === 'service' ? tile.rent?.[0] : null)
     return {
       ...tile,
       name: tileCount.value === 32 ? tile.name : vietnamTileName(tile.index, tile.name),
       ...pos,
+      corner: tile.index % edge.value === 0,
       side: tile.index <= edge.value ? 'south' : tile.index <= edge.value * 2 ? 'west' : tile.index <= edge.value * 3 ? 'north' : 'east',
       color: GROUPS[tile.group] || null,
       owner,
       ownerColor: owner ? SKIN[ownerPlayer?.skin] || '#94a3b8' : null,
       ownerSkin: ownerPlayer?.skin || 'ace',
       houseLevel,
+      landingFee,
+      feeLabel: tile.type === 'tax' ? '10% tài sản' : landingFee !== null ? money(landingFee) : '',
       popHouse: Boolean(popping[tile.index]),
       pawns: playersByTile.value[tile.index] || [],
     }
@@ -165,17 +171,17 @@ const cells = computed(() =>
         class="cell"
         :class="[tile.side, tile.special, { corner: tile.index % edge === 0, current: tile.pawns.some((p) => p.seat === currentSeat), owned: !!tile.owner, selectable: selecting && selectable.has(Number(tile.index)), selected: selecting && selectedTile === Number(tile.index) }]"
         :style="{ left: tile.x + '%', top: tile.y + '%', '--g': tile.color || '#a9d8e5', zIndex: tile.index % edge === 0 ? 300 + Math.round(tile.y) : Math.round(tile.y * 2) }"
-        :title="tile.price ? `${tile.name} · ${money(tile.price)}` : tile.name"
+        :title="tile.feeLabel ? `${tile.name} · Phí hiện tại ${tile.feeLabel}` : tile.name"
       >
         <div class="tile-plane" :class="tile.type">
           <span v-if="tile.owner" class="stripe" :style="{ background: tile.ownerColor }" />
         </div>
-        <CrAssetProp v-if="tile.type !== 'property' || tile.owner" class="art" :tile="tile" />
+        <CrAssetProp v-if="tile.corner || tile.type === 'chance' || tile.owner" class="art" :tile="tile" />
         <span class="tile-copy">
           <span class="name">{{ tile.name }}</span>
-          <span v-if="tile.price" class="price">{{ money(tile.price) }}</span>
+          <span v-if="tile.feeLabel" class="price" :class="{ free: tile.landingFee === 0 }">{{ tile.feeLabel }}</span>
         </span>
-        <button v-if="selecting && selectable.has(Number(tile.index))" type="button" class="tile-target" :disabled="selectionBusy" :aria-label="tile.price ? `${tile.name} · ${money(tile.price)}` : tile.name" :aria-pressed="selectedTile === Number(tile.index)" @click="emit('select-tile', Number(tile.index))" />
+        <button v-if="selecting && selectable.has(Number(tile.index))" type="button" class="tile-target" :disabled="selectionBusy" :aria-label="tile.feeLabel ? `${tile.name} · Phí hiện tại ${tile.feeLabel}` : tile.name" :aria-pressed="selectedTile === Number(tile.index)" @click="emit('select-tile', Number(tile.index))" />
         <span v-if="tile.owner" class="owner-level" :style="{ background: tile.ownerColor }">{{ tile.houseLevel }} ★</span>
         <span v-if="festivals[tile.index] > 1" class="festival-badge" :title="`Lễ hội: tiền thuê ×${festivals[tile.index]}`">⚑ ×{{ festivals[tile.index] }}</span>
         <div class="pawns">
@@ -227,6 +233,7 @@ const cells = computed(() =>
 .corner .tile-copy { width:88%; padding-bottom:5%; font-size:clamp(9px,1.15cqw,15px); color:#173957; font-weight:850; }
 .name { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .price { font-size:clamp(10px,1.35cqw,18px); color:#172a3a; font-weight:900; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.price.free { color:#27835f; }
 .tile-target { position:absolute; inset:0; z-index:5; border:0; padding:0; background:transparent; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); cursor:pointer; pointer-events:auto; }
 .corner .tile-target { inset:-14%; }
 .selectable .tile-plane { background:#0086cc; filter:drop-shadow(0 0 4px #15b6ee); }
