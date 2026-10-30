@@ -14,7 +14,7 @@ const buildings = {
 }
 const special = computed(() => props.tile.special || ({ start: 'start', detention: 'island' }[props.tile.type]))
 const frame = computed(() => {
-  if (special.value === 'island' || special.value === 'beach') return [60, 315, 260, 235]
+  if (['island', 'beach', 'resort'].includes(special.value)) return [60, 315, 260, 235]
   if (['world_tour', 'championship'].includes(special.value)) return [350, 315, 245, 235]
   if (special.value === 'airport') return [895, 295, 225, 260]
   if (special.value === 'start') return [685, 535, 300, 180]
