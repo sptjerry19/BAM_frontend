@@ -12,6 +12,8 @@ const props = defineProps({
  * with the same stroke weight so the family reads as one set.
  */
 const paths = {
+  mail: ['M3 5h18v14H3z', 'm3 5 9 8 9-8'],
+  bell: ['M5 17h14l-2-3V9a5 5 0 0 0-10 0v5l-2 3Z', 'M10 21h4'],
   shuttlecock: [
     'M12 3.2 8.4 9.6h7.2L12 3.2Z',
     'M8.4 9.6 5.6 14.2m6.4-4.6v4.6m3.6-4.6 2.8 4.6',

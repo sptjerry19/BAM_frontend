@@ -6,6 +6,10 @@ services:
       args:
         # Same-origin: browser calls /api, nginx proxies to backend
         VITE_API_URL: /api
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST:-}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-}
     ports:
       - "${WEB_PORT:-80}:80"
       - "${WEB_SSL_PORT:-443}:443"

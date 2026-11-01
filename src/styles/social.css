@@ -1,0 +1,102 @@
+.social-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg-2);
+  color: var(--text);
+  font: inherit;
+  min-width: 0;
+}
+body.social-dialog-open {
+  overflow: hidden;
+}
+.social-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.social-input option {
+  background: var(--bg);
+  color: var(--text);
+}
+.social-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgb(0 0 0 / 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+.social-dialog {
+  width: 100%;
+  max-width: 38rem;
+  max-height: 90dvh;
+  overflow: auto;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+}
+.social-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-2);
+  font-weight: 700;
+  color: var(--accent);
+}
+.social-menu {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+.social-menu:hover {
+  background: var(--bg-2);
+}
+.social-cover {
+  height: clamp(12rem, 28vw, 22rem);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+}
+.social-cover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.social-profile-avatar {
+  width: 8.5rem;
+  height: 8.5rem;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid var(--bg);
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  .social-profile-avatar {
+    width: 10.5rem;
+    height: 10.5rem;
+  }
+}
+.social-overlay button:focus-visible,
+.social-dialog a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .social-overlay * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

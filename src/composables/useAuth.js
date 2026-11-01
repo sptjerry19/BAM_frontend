@@ -8,6 +8,7 @@ import {
   resetPassword as apiReset,
 } from '../api'
 import { TOKEN_KEY } from '../api/client'
+import api from '../api/client'
 
 const USER_KEY = 'bm_user'
 
@@ -56,7 +57,9 @@ export function useAuth() {
   const isAuthenticated = computed(() => Boolean(token.value && user.value))
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isUser = computed(() => user.value?.role === 'user')
-  const memberId = computed(() => user.value?.member_id || user.value?.member?.id || null)
+  const memberId = computed(
+    () => user.value?.member_id || user.value?.member?.id || null,
+  )
 
   async function bootstrap() {
     if (bootstrapped.value) return
@@ -108,6 +111,13 @@ export function useAuth() {
     persist(token.value, nextUser)
   }
 
+  async function refreshAuth() {
+    const refreshingToken = token.value
+    const response = await api.post('/refresh')
+    if (token.value !== refreshingToken) return user.value
+    return applyAuthPayload(response.data)
+  }
+
   async function forgotPassword(email) {
     loading.value = true
     try {
@@ -142,6 +152,7 @@ export function useAuth() {
     forgotPassword,
     resetPassword,
     replaceUser,
+    refreshAuth,
     clearAuth,
     apiErrorMessage,
   }
