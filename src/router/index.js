@@ -15,6 +15,10 @@ import CheckoutConfirmView from '../components/user/CheckoutConfirmView.vue'
 import EquipmentView from '../components/user/EquipmentView.vue'
 import FavoritesView from '../components/user/FavoritesView.vue'
 import ProfileView from '../components/user/ProfileView.vue'
+import MessagesView from '../components/user/MessagesView.vue'
+import NotificationsView from '../components/user/NotificationsView.vue'
+import SocialPostView from '../components/user/SocialPostView.vue'
+import AccountSettingsView from '../components/user/AccountSettingsView.vue'
 import NewsView from '../components/user/NewsView.vue'
 import NewsDetailView from '../components/user/NewsDetailView.vue'
 import RankingsView from '../components/user/RankingsView.vue'
@@ -27,6 +31,7 @@ import CourtsManager from '../components/admin/CourtsManager.vue'
 import ProductsManager from '../components/admin/ProductsManager.vue'
 import MembersManager from '../components/admin/MembersManager.vue'
 import NewsManager from '../components/admin/NewsManager.vue'
+import SocialReportsView from '../components/admin/SocialReportsView.vue'
 
 import LoginView from '../components/auth/LoginView.vue'
 import RegisterView from '../components/auth/RegisterView.vue'
@@ -146,6 +151,11 @@ const routes = [
         component: ProfileView,
         meta: { requiresAuth: true, fullBleed: true, title: 'Hồ sơ', titleKey: 'titles.profile' },
       },
+      { path: 'users/:id', name: 'social-profile', component: ProfileView, meta: { fullBleed: true, title: 'Trang cá nhân' } },
+      { path: 'posts/:id', name: 'social-post', component: SocialPostView, meta: { title: 'Bài viết' } },
+      { path: 'messages', name: 'messages', component: MessagesView, meta: { requiresAuth: true, title: 'Tin nhắn' } },
+      { path: 'notifications', name: 'notifications', component: NotificationsView, meta: { requiresAuth: true, title: 'Thông báo' } },
+      { path: 'settings/account', name: 'account-settings', component: AccountSettingsView, meta: { requiresAuth: true, title: 'Cài đặt tài khoản' } },
       {
         path: 'games',
         name: 'cr-lobby',
@@ -173,6 +183,7 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       { path: '', redirect: { name: 'admin-dashboard' } },
+      { path: 'social-reports', name: 'admin-social-reports', component: SocialReportsView, meta: { title: 'Báo cáo cộng đồng' } },
       {
         path: 'dashboard',
         name: 'admin-dashboard',

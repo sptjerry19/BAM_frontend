@@ -7,6 +7,9 @@ import { levelColors, levelLabels } from '../../utils/labels'
 import { upload } from '../../utils/uploads'
 import { useAuth } from '../../composables/useAuth'
 import { useLocale } from '../../composables/useLocale'
+import { useSocialRealtime } from '../../composables/useSocialRealtime'
+import { useDialogFocus } from '../../composables/useDialogFocus'
+import { social } from '../../api/social'
 import Icon from '../common/Icon.vue'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import LocaleToggle from '../common/LocaleToggle.vue'
@@ -27,6 +30,18 @@ const route = useRoute()
 const router = useRouter()
 const { user: authUser, isAuthenticated, logout } = useAuth()
 const { t } = useLocale()
+const realtime = useSocialRealtime()
+useDialogFocus()
+const socialCounts = ref({ messages: 0, notifications: 0 })
+let countTimer
+async function loadSocialCounts() {
+  if (!authUser.value) { socialCounts.value = { messages: 0, notifications: 0 }; return }
+  const id = authUser.value.id
+  try { const counts = await social.get('/me/social-counts'); if(authUser.value?.id === id) socialCounts.value = counts } catch { /* Keep the previous count during transient network failures. */ }
+}
+const unsubscribeCounts = realtime.subscribe(() => { clearTimeout(countTimer); countTimer = setTimeout(loadSocialCounts, 300) })
+watch(() => authUser.value?.id, loadSocialCounts, { immediate: true })
+onUnmounted(() => { unsubscribeCounts(); clearTimeout(countTimer) })
 
 const user = ref(null)
 const cart = ref(readJson(CART_KEY, []))
@@ -42,12 +57,14 @@ const publicNavItems = computed(() => [
   { name: 'rankings', label: t('nav.rankings'), icon: 'trophy' },
   { name: 'cr-lobby', label: t('nav.games'), icon: 'spark' },
   { name: 'top-products', label: t('nav.topProducts'), icon: 'chart' },
-  { name: 'favorites', label: t('nav.favorites'), icon: 'heart' },
+  // { name: 'favorites', label: t('nav.favorites'), icon: 'heart' },
 ])
 
 const accountNavItems = computed(() => [
   { name: 'equipment', label: t('nav.equipment'), icon: 'racket' },
-  { name: 'profile', label: t('nav.profile'), icon: 'user' },
+  // { name: 'profile', label: t('nav.profile'), icon: 'user' },
+  // { name: 'messages', label: 'Tin nhắn', icon: 'mail' },
+  { name: 'notifications', label: 'Thông báo', icon: 'bell' },
 ])
 
 const navItems = computed(() =>
@@ -145,6 +162,8 @@ provide('goToShop', () => router.push({ name: 'shop' }))
 function badgeCount(name) {
   if (name === 'cart') return cartCount.value
   if (name === 'favorites') return favorites.value.length
+  if (name === 'messages') return socialCounts.value.messages
+  if (name === 'notifications') return socialCounts.value.notifications
   return 0
 }
 
@@ -383,6 +402,8 @@ onUnmounted(() => {
                 <Icon name="user" :size="17" />
                 Hồ sơ của tôi
               </RouterLink>
+              <RouterLink :to="{ name: 'messages' }" role="menuitem" class="w-full flex px-3 py-2.5 rounded-lg text-[13px] hover:bg-[var(--accent-soft)]">Tin nhắn</RouterLink>
+              <RouterLink :to="{ name: 'notifications' }" role="menuitem" class="w-full flex px-3 py-2.5 rounded-lg text-[13px] hover:bg-[var(--accent-soft)]">Thông báo</RouterLink>
               <RouterLink
                 :to="{ name: 'equipment' }"
                 role="menuitem"
