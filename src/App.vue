@@ -26,7 +26,7 @@ watch(
 </script>
 
 <template>
-  <SiteIntro :ready="bootstrapped" />
+  <SiteIntro v-if="route.name !== 'portfolio'" :ready="bootstrapped" />
 
   <div
     v-if="!bootstrapped"

@@ -15,6 +15,7 @@ import CheckoutConfirmView from '../components/user/CheckoutConfirmView.vue'
 import EquipmentView from '../components/user/EquipmentView.vue'
 import FavoritesView from '../components/user/FavoritesView.vue'
 import ProfileView from '../components/user/ProfileView.vue'
+import PortfolioView from '../components/user/PortfolioView.vue'
 import MessagesView from '../components/user/MessagesView.vue'
 import NotificationsView from '../components/user/NotificationsView.vue'
 import SocialPostView from '../components/user/SocialPostView.vue'
@@ -150,6 +151,12 @@ const routes = [
         name: 'profile',
         component: ProfileView,
         meta: { requiresAuth: true, fullBleed: true, title: 'Hồ sơ', titleKey: 'titles.profile' },
+      },
+      {
+        path: 'portfolio',
+        name: 'portfolio',
+        component: PortfolioView,
+        meta: { fullBleed: true, title: 'Portfolio' },
       },
       { path: 'users/:id', name: 'social-profile', component: ProfileView, meta: { fullBleed: true, title: 'Trang cá nhân' } },
       { path: 'posts/:id', name: 'social-post', component: SocialPostView, meta: { title: 'Bài viết' } },

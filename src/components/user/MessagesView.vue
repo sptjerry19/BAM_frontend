@@ -200,6 +200,13 @@ async function send() {
     busy.value = false
   }
 }
+function onComposerKeydown(event) {
+  if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return
+  event.preventDefault()
+  if (busy.value || !current.value) return
+  if (!pending.value && !body.value.trim() && !file.value) return
+  send()
+}
 async function accept() {
   try {
     await social.put(`/conversations/${current.value.id}/accept`)
@@ -464,6 +471,7 @@ onBeforeUnmount(() => {
               maxlength="5000"
               placeholder="Viết tin nhắn…"
               :disabled="busy || !!pending"
+              @keydown="onComposerKeydown"
             />
             <div class="flex items-center gap-3 mt-3">
               <label

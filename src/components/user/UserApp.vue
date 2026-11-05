@@ -267,7 +267,7 @@ onUnmounted(() => {
   <div class="min-h-[100dvh]" style="background: var(--bg)">
     <a class="skip-link" href="#main">{{ t('skipToContent') }}</a>
 
-    <div class="pre-nav" :aria-label="t('nav.secondaryLinks')">
+    <div v-if="route.name !== 'portfolio'" class="pre-nav" :aria-label="t('nav.secondaryLinks')">
       <div class="shell pre-nav__inner">
         <a href="#main">{{ t('nav.findCourt') }}</a>
         <a href="#main">{{ t('nav.support') }}</a>
@@ -283,7 +283,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <header class="top-nav">
+    <header v-if="route.name !== 'portfolio'" class="top-nav">
       <div class="shell flex items-center gap-5 h-[60px] md:h-[64px]">
         <button
           type="button"
@@ -402,6 +402,16 @@ onUnmounted(() => {
                 <Icon name="user" :size="17" />
                 Hồ sơ của tôi
               </RouterLink>
+              <a
+                href="/portfolio"
+                target="_blank"
+                rel="noopener noreferrer"
+                role="menuitem"
+                class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors hover:bg-[var(--accent-soft)]"
+              >
+                <Icon name="briefcase" :size="17" />
+                Portfolio
+              </a>
               <RouterLink :to="{ name: 'messages' }" role="menuitem" class="w-full flex px-3 py-2.5 rounded-lg text-[13px] hover:bg-[var(--accent-soft)]">Tin nhắn</RouterLink>
               <RouterLink :to="{ name: 'notifications' }" role="menuitem" class="w-full flex px-3 py-2.5 rounded-lg text-[13px] hover:bg-[var(--accent-soft)]">Thông báo</RouterLink>
               <RouterLink
@@ -521,7 +531,7 @@ onUnmounted(() => {
       </motion.aside>
     </AnimatePresence>
 
-    <main id="main" class="pb-28 md:pb-0">
+    <main id="main" :class="route.name === 'portfolio' ? '' : 'pb-28 md:pb-0'">
       <RouterView v-slot="{ Component, route: current }">
         <AnimatePresence mode="wait">
           <motion.div
@@ -540,7 +550,7 @@ onUnmounted(() => {
       </RouterView>
     </main>
 
-    <footer class="site-footer">
+    <footer v-if="route.name !== 'portfolio'" class="site-footer">
       <div class="shell site-footer__grid">
         <nav :aria-label="t('footer.shop')">
           <h2>{{ t('footer.shop') }}</h2>
@@ -590,6 +600,7 @@ onUnmounted(() => {
     </footer>
 
     <nav
+      v-if="route.name !== 'portfolio'"
       class="md:hidden fixed bottom-0 inset-x-0 bottom-nav-blur pb-safe"
       style="z-index: var(--z-sticky)"
       :aria-label="t('nav.bottomNav')"
