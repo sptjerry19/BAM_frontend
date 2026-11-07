@@ -33,6 +33,7 @@ import ProductsManager from '../components/admin/ProductsManager.vue'
 import MembersManager from '../components/admin/MembersManager.vue'
 import NewsManager from '../components/admin/NewsManager.vue'
 import SocialReportsView from '../components/admin/SocialReportsView.vue'
+import ContentStudioDashboard from '../components/admin/content-studio/ContentStudioDashboard.vue'
 
 import LoginView from '../components/auth/LoginView.vue'
 import RegisterView from '../components/auth/RegisterView.vue'
@@ -191,6 +192,7 @@ const routes = [
     children: [
       { path: '', redirect: { name: 'admin-dashboard' } },
       { path: 'social-reports', name: 'admin-social-reports', component: SocialReportsView, meta: { title: 'Báo cáo cộng đồng' } },
+      { path: 'content-studio', name: 'admin-content-studio', component: ContentStudioDashboard, meta: { title: 'Content Studio' } },
       {
         path: 'dashboard',
         name: 'admin-dashboard',
