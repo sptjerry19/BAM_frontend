@@ -1,42 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { contentStudio, contentStudioError } from '../../../api/contentStudio'
-
-const STATUS_LABELS = {
-  idea: 'Ý tưởng',
-  researching: 'Đang nghiên cứu',
-  source_verified: 'Đã xác minh nguồn',
-  scripted: 'Đã có kịch bản',
-  producing: 'Đang sản xuất',
-  quality_check: 'Kiểm tra chất lượng',
-  needs_review: 'Cần duyệt',
-  ready: 'Sẵn sàng',
-  scheduling: 'Đang lên lịch',
-  scheduled: 'Đã lên lịch',
-  publish_unknown: 'Chưa rõ kết quả đăng',
-  reconciliation: 'Đang đối soát',
-  published: 'Đã đăng',
-  measured: 'Đã đo',
-  blocked: 'Bị chặn',
-  failed: 'Lỗi',
-  cancelled: 'Đã hủy',
-}
-const SLOT_LABELS = { news: 'Tin tức', equipment: 'Trang bị', tutorial: 'Kỹ thuật', meme: 'Meme' }
-const TONE = {
-  good: ['ready', 'scheduled', 'published', 'measured', 'succeeded'],
-  warn: ['needs_review', 'blocked', 'publish_unknown', 'reconciliation', 'running', 'pending'],
-  bad: ['failed'],
-}
-const COLORS = { good: '#84cc16', warn: '#facc15', bad: '#ef4444', neutral: '#64748b' }
-
-function tone(status) {
-  return Object.keys(TONE).find((k) => TONE[k].includes(status)) || 'neutral'
-}
-function pillStyle(status) {
-  const c = COLORS[tone(status)]
-  return { background: `${c}1f`, color: c, border: `1px solid ${c}30` }
-}
-const fmt = (v) => (v ? new Date(v).toLocaleString('vi-VN') : '—')
+import ContentCalendar from './ContentCalendar.vue'
+import ContentReviewModal from './ContentReviewModal.vue'
+import { STATUS_LABELS, SLOT_LABELS, pillStyle, fmt } from './labels'
 
 const overview = ref(null)
 const items = ref([])
@@ -48,6 +15,13 @@ const busy = ref(false)
 const filters = ref({ status: '', slot: '' })
 const page = ref(1)
 let timer = null
+const openId = ref(null)
+const calendarVersion = ref(0)
+
+function onChanged() {
+  calendarVersion.value++
+  loadAll()
+}
 
 const flags = computed(() => overview.value?.flags ?? null)
 
@@ -205,6 +179,8 @@ onUnmounted(() => clearInterval(timer))
         </div>
       </section>
 
+      <ContentCalendar :refresh-key="calendarVersion" @open="openId = $event" />
+
       <!-- Blockers -->
       <section class="surface p-5 sm:p-6 mb-5">
         <h2 class="font-heading font-bold text-[18px]">Cần xử lý</h2>
@@ -215,7 +191,9 @@ onUnmounted(() => clearInterval(timer))
           <li v-for="b in overview.blockers" :key="b.id" class="admin-row rounded-xl px-3 py-2.5 text-[13px]">
             <div class="flex flex-wrap items-center gap-2">
               <span class="mono" style="color: var(--text-3)">#{{ b.id }}</span>
-              <span class="font-semibold">{{ b.title || '(chưa có tiêu đề)' }}</span>
+              <button type="button" class="font-semibold underline text-left" @click="openId = b.id">
+                {{ b.title || '(chưa có tiêu đề)' }}
+              </button>
               <span class="pill" :style="pillStyle(b.status)">{{ STATUS_LABELS[b.status] || b.status }}</span>
               <span style="color: var(--text-3)">{{ SLOT_LABELS[b.slot] || b.slot }}</span>
             </div>
@@ -255,7 +233,9 @@ onUnmounted(() => clearInterval(timer))
             <tbody>
               <tr v-for="it in items" :key="it.id" class="admin-row">
                 <td class="py-2 pr-3 mono">{{ it.id }}</td>
-                <td class="py-2 pr-3">{{ it.title || '—' }}</td>
+                <td class="py-2 pr-3">
+                  <button type="button" class="underline text-left" @click="openId = it.id">{{ it.title || '(chưa có tiêu đề)' }}</button>
+                </td>
                 <td class="py-2 pr-3">{{ SLOT_LABELS[it.slot] || it.slot }} · {{ it.content_type }}</td>
                 <td class="py-2 pr-3">
                   <span class="pill" :style="pillStyle(it.status)">{{ STATUS_LABELS[it.status] || it.status }}</span>
@@ -296,5 +276,7 @@ onUnmounted(() => clearInterval(timer))
         </ul>
       </section>
     </template>
+
+    <ContentReviewModal v-if="openId !== null" :key="openId" :item-id="openId" @close="openId = null" @changed="onChanged" />
   </div>
 </template>
