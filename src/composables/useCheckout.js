@@ -14,12 +14,12 @@ export const PAYMENT_METHODS = [
   {
     id: 'momo',
     label: 'MoMo',
-    hint: 'Thanh toán qua ví MoMo (sẽ mở cổng thanh toán).',
+    hint: 'Đơn được ghi nhận ở trạng thái chờ xác nhận; chưa có cổng thanh toán trực tuyến.',
   },
   {
     id: 'apple_pay',
     label: 'Apple Pay',
-    hint: 'Thanh toán nhanh trên thiết bị Apple.',
+    hint: 'Đơn được ghi nhận ở trạng thái chờ xác nhận; chưa có cổng thanh toán trực tuyến.',
   },
 ]
 

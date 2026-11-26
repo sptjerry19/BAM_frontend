@@ -7,10 +7,10 @@ npm install
 npm run dev
 ```
 
-Mặc định gọi API `http://localhost:8000/api`. Đổi bằng `.env`:
+Vite local gọi API `http://127.0.0.1:8082/api`. Đổi bằng `.env`:
 
 ```env
-VITE_API_URL=http://localhost/api
+VITE_API_URL=http://127.0.0.1:8082/api
 ```
 
 ## Docker (repo FE riêng)

@@ -14,6 +14,8 @@ export const updateProfile = (data) => {
 }
 export const forgotPassword = (data) =>
   api.post(`${AUTH}/forgot-password`, data).then((r) => r.data)
+export const verifyResetCode = (data) =>
+  api.post(`${AUTH}/verify-reset-code`, data).then((r) => r.data)
 export const resetPassword = (data) =>
   api.post(`${AUTH}/reset-password`, data).then((r) => r.data)
 

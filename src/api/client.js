@@ -3,8 +3,8 @@ import axios from 'axios'
 const TOKEN_KEY = 'bm_token'
 
 const api = axios.create({
-  // Same-origin `/api` when served behind Docker nginx; local vite defaults to :8000
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080/api' : '/api'),
+  // Same-origin `/api` when served behind Docker nginx; local Vite uses the API debug port.
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8082/api' : '/api'),
 })
 
 api.interceptors.request.use((config) => {

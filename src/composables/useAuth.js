@@ -5,6 +5,7 @@ import {
   logout as apiLogout,
   getMe,
   forgotPassword as apiForgot,
+  verifyResetCode as apiVerifyResetCode,
   resetPassword as apiReset,
 } from '../api'
 import { TOKEN_KEY } from '../api/client'
@@ -136,6 +137,15 @@ export function useAuth() {
     }
   }
 
+  async function verifyResetCode(payload) {
+    loading.value = true
+    try {
+      return await apiVerifyResetCode(payload)
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     token: readonly(token),
     user: readonly(user),
@@ -150,6 +160,7 @@ export function useAuth() {
     register,
     logout,
     forgotPassword,
+    verifyResetCode,
     resetPassword,
     replaceUser,
     refreshAuth,

@@ -7,17 +7,13 @@ import Icon from '../common/Icon.vue'
 import { formatCurrency, productCoverUrl } from '../../utils/labels'
 import {
   PAYMENT_METHODS,
-  DEMO_VOUCHERS,
   readCheckout,
   writeCheckout,
   clearCheckout,
   paymentLabel,
   emptyCheckout,
-  findVoucher,
-  estimateVoucherOff,
 } from '../../composables/useCheckout'
 
-const user = inject('user')
 const cart = inject('cart')
 const setCart = inject('setCart')
 const router = useRouter()
@@ -29,10 +25,6 @@ const submitError = ref('')
 const ordered = ref(false)
 const orderResult = ref(null)
 
-const voucherInput = ref('')
-const voucherMsg = ref('')
-const voucherOk = ref(false)
-const showVoucherList = ref(true)
 
 const cartProducts = computed(() =>
   cart.value
@@ -47,10 +39,6 @@ const total = computed(() =>
   cartProducts.value.reduce((s, i) => s + i.product.price * i.qty, 0),
 )
 
-const appliedVoucher = computed(() => findVoucher(checkout.value.voucher_code))
-const voucherOff = computed(() => estimateVoucherOff(appliedVoucher.value, total.value))
-const pointsSaved = computed(() => (user.value?.points ?? 0) * 10)
-const payable = computed(() => Math.max(0, total.value - pointsSaved.value - voucherOff.value))
 
 const shippingReady = computed(() =>
   Boolean(
@@ -68,10 +56,6 @@ onMounted(async () => {
   }
 
   checkout.value = readCheckout()
-  voucherInput.value = checkout.value.voucher_code || ''
-  if (checkout.value.voucher_code) {
-    voucherOk.value = Boolean(findVoucher(checkout.value.voucher_code))
-  }
   if (!shippingReady.value) {
     router.replace({ name: 'checkout-info' })
     return
@@ -85,71 +69,21 @@ function selectPayment(id) {
   writeCheckout({ ...checkout.value, payment_method: id })
 }
 
-function persistVoucher(code) {
-  checkout.value.voucher_code = code
-  writeCheckout({ ...checkout.value, voucher_code: code })
-}
-
-function applyVoucherCode(raw) {
-  const code = String(raw || '').trim().toUpperCase()
-  voucherInput.value = code
-  voucherMsg.value = ''
-  voucherOk.value = false
-
-  if (!code) {
-    voucherMsg.value = 'Nhập mã giảm giá để áp dụng.'
-    return
-  }
-
-  const found = findVoucher(code)
-  if (!found) {
-    persistVoucher('')
-    voucherMsg.value = 'Mã không hợp lệ hoặc đã hết hạn.'
-    return
-  }
-  if (total.value < (found.minOrder || 0)) {
-    persistVoucher('')
-    voucherMsg.value = `Đơn tối thiểu ${formatCurrency(found.minOrder)} để dùng mã này.`
-    return
-  }
-
-  persistVoucher(found.code)
-  voucherOk.value = true
-  voucherMsg.value = found.type === 'shipping'
-    ? `Đã áp dụng ${found.code} — miễn phí giao hàng.`
-    : `Đã áp dụng ${found.code}.`
-}
-
-function applyFromList(voucher) {
-  applyVoucherCode(voucher.code)
-}
-
-function clearVoucher() {
-  voucherInput.value = ''
-  voucherMsg.value = ''
-  voucherOk.value = false
-  persistVoucher('')
-}
-
 async function placeOrder() {
   if (!cartProducts.value.length || !shippingReady.value) return
   submitting.value = true
   submitError.value = ''
   try {
-    const memberId = user.value?.member_id || user.value?.member?.id || user.value?.id || null
     orderResult.value = await createOrder({
-      ...(memberId ? { member_id: String(memberId) } : {}),
       customer_name: checkout.value.name,
       customer_phone: checkout.value.phone,
       customer_email: checkout.value.email,
       shipping_address: checkout.value.address,
       note: checkout.value.note || null,
       payment_method: checkout.value.payment_method,
-      status: 'pending',
       items: cartProducts.value.map((i) => ({
         product_id: i.productId,
         qty: i.qty,
-        price: i.product.price,
       })),
     })
     setCart([])
@@ -272,92 +206,6 @@ function backToShop() {
           class="surface p-5 sm:p-6"
           :initial="{ opacity: 0, y: 12 }"
           :animate="{ opacity: 1, y: 0 }"
-          :transition="{ delay: 0.08 }"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="font-heading font-bold text-[16px] flex items-center gap-2">
-              <Icon name="tag" :size="18" />
-              Mã giảm giá
-            </h2>
-            <button
-              type="button"
-              class="btn-text text-[12.5px]"
-              @click="showVoucherList = !showVoucherList"
-            >
-              {{ showVoucherList ? 'Ẩn mã có sẵn' : 'Chọn mã có sẵn' }}
-            </button>
-          </div>
-
-          <form class="mt-4 flex gap-2" @submit.prevent="applyVoucherCode(voucherInput)">
-            <label class="sr-only" for="voucher-code">Mã giảm giá</label>
-            <input
-              id="voucher-code"
-              v-model="voucherInput"
-              type="text"
-              maxlength="32"
-              autocomplete="off"
-              spellcheck="false"
-              class="input-field flex-1 min-w-0 px-3.5 py-3 rounded-xl text-[14px] uppercase tracking-wide"
-              placeholder="Nhập mã (vd: JBAM10)"
-              :disabled="Boolean(appliedVoucher)"
-            />
-            <button
-              v-if="!appliedVoucher"
-              type="submit"
-              class="btn-ghost shrink-0 px-4 py-3 rounded-xl text-[13.5px] font-semibold"
-            >
-              Áp dụng
-            </button>
-            <button
-              v-else
-              type="button"
-              class="btn-ghost shrink-0 px-4 py-3 rounded-xl text-[13.5px] font-semibold"
-              @click="clearVoucher"
-            >
-              Gỡ
-            </button>
-          </form>
-
-          <p
-            v-if="voucherMsg"
-            class="mt-2.5 text-[13px]"
-            :style="{ color: voucherOk ? 'var(--accent)' : '#f87171' }"
-            role="status"
-          >
-            {{ voucherMsg }}
-          </p>
-
-          <ul v-if="showVoucherList" class="mt-4 space-y-2" aria-label="Mã giảm giá có sẵn">
-            <li v-for="v in DEMO_VOUCHERS" :key="v.code">
-              <button
-                type="button"
-                class="w-full text-left rounded-2xl px-4 py-3.5 transition-colors flex items-start gap-3"
-                :aria-pressed="checkout.voucher_code === v.code"
-                :style="{
-                  border: `1px solid ${checkout.voucher_code === v.code ? 'var(--accent-line)' : 'var(--line)'}`,
-                  background: checkout.voucher_code === v.code ? 'var(--accent-soft)' : 'transparent',
-                }"
-                @click="applyFromList(v)"
-              >
-                <span
-                  class="mono text-[12px] font-semibold px-2 py-1 rounded-lg shrink-0 mt-0.5"
-                  style="background: rgba(0,0,0,0.06); letter-spacing: 0.04em"
-                >
-                  {{ v.code }}
-                </span>
-                <span class="min-w-0">
-                  <span class="font-semibold text-[14px] block">{{ v.title }}</span>
-                  <span class="text-[12.5px] mt-0.5 block" style="color: var(--text-3)">{{ v.hint }}</span>
-                </span>
-              </button>
-            </li>
-          </ul>
-        </motion.div>
-
-        <motion.div
-          class="surface p-5 sm:p-6"
-          :initial="{ opacity: 0, y: 12 }"
-          :animate="{ opacity: 1, y: 0 }"
           :transition="{ delay: 0.1 }"
         >
           <h2 class="font-heading font-bold text-[16px]">Phương thức thanh toán</h2>
@@ -398,19 +246,6 @@ function backToShop() {
             <dt style="color: var(--text-3)">Phí giao hàng</dt>
             <dd class="mono" style="color: var(--accent)">Miễn phí</dd>
           </div>
-          <div v-if="pointsSaved > 0" class="flex justify-between">
-            <dt style="color: var(--text-3)">Đổi điểm tích lũy</dt>
-            <dd class="mono" style="color: var(--accent)">−{{ formatCurrency(pointsSaved) }}</dd>
-          </div>
-          <div v-if="appliedVoucher" class="flex justify-between gap-3">
-            <dt style="color: var(--text-3)">
-              Mã {{ appliedVoucher.code }}
-              <span v-if="appliedVoucher.type === 'shipping'" class="block text-[11px]">Freeship</span>
-            </dt>
-            <dd class="mono shrink-0" style="color: var(--accent)">
-              {{ voucherOff > 0 ? `−${formatCurrency(voucherOff)}` : 'Áp dụng' }}
-            </dd>
-          </div>
           <div class="flex justify-between">
             <dt style="color: var(--text-3)">Hình thức</dt>
             <dd class="text-right text-[13px]">{{ paymentLabel(checkout.payment_method) }}</dd>
@@ -420,7 +255,7 @@ function backToShop() {
         <div class="flex items-baseline justify-between mt-5 pt-5" style="border-top: 1px solid var(--line)">
           <span class="font-heading font-bold text-[15px]">Tổng cộng</span>
           <span class="mono text-2xl font-medium" style="color: var(--accent)">
-            {{ formatCurrency(payable) }}
+            {{ formatCurrency(total) }}
           </span>
         </div>
 
