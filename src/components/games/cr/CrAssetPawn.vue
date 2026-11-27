@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import pawns from '../../../assets/games/tour/pawns-transparent.png'
+import pawns from '../../../assets/games/tour/pawns-transparent.webp'
 
 const props = defineProps({ skin: { type: String, default: 'ace' }, size: { type: Number, default: 56 }, anim: { type: String, default: 'idle' }, label: { type: String, default: '' } })
 // Crop the four original 2D characters from the supplied artwork; no 3D renderer.

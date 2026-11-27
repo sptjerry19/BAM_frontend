@@ -1,8 +1,8 @@
 # Vue SPA for separate FE repo.
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci || npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 # Same-origin when FE nginx proxies /api (default for EC2)
 ARG VITE_API_URL=/api

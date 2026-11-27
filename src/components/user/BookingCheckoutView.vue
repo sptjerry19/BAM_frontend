@@ -76,11 +76,8 @@ async function submit() {
   submitting.value = true
   submitError.value = ''
   try {
-    const memberId = user.value?.id
-    const attachMember = memberId && !String(memberId).startsWith('u_')
     result.value = await createBooking({
       court_id: draft.value.court_id,
-      ...(attachMember ? { member_id: memberId } : {}),
       booking_date: draft.value.booking_date,
       slots: draft.value.slots.map((s) => ({
         court_number: s.court_number,

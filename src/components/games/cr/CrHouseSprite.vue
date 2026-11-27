@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import atlas from '../../../assets/games/tour/tiles-transparent.png'
+import atlas from '../../../assets/games/tour/tiles-transparent.webp'
 const props = defineProps({ level: { type: Number, default: 1 }, skin: { type: String, default: 'ace' }, color: { type: String, default: '' } })
 const houseLevel = computed(() => Math.min(4, Math.max(1, Number(props.level) || 1)))
 const color = computed(() => props.color || ({ ace: '#2563eb', ruby: '#db2777', kiwi: '#65a30d', blaze: '#ea580c' }[props.skin] || '#2563eb'))

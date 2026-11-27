@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import atlas from '../../../assets/games/tour/tiles-transparent.png'
+import atlas from '../../../assets/games/tour/tiles-transparent.webp'
 import CrHouseSprite from './CrHouseSprite.vue'
 
 const props = defineProps({ tile: { type: Object, required: true } })

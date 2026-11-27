@@ -2,45 +2,45 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { useLocale } from '../composables/useLocale'
 
-import UserApp from '../components/user/UserApp.vue'
-import HomeView from '../components/user/HomeView.vue'
-import MapView from '../components/user/MapView.vue'
-import CourtDetailView from '../components/user/CourtDetailView.vue'
-import BookingCheckoutView from '../components/user/BookingCheckoutView.vue'
-import ShopView from '../components/user/ShopView.vue'
-import ProductDetailView from '../components/user/ProductDetailView.vue'
-import CartView from '../components/user/CartView.vue'
-import CheckoutInfoView from '../components/user/CheckoutInfoView.vue'
-import CheckoutConfirmView from '../components/user/CheckoutConfirmView.vue'
-import EquipmentView from '../components/user/EquipmentView.vue'
-import FavoritesView from '../components/user/FavoritesView.vue'
-import ProfileView from '../components/user/ProfileView.vue'
-import PortfolioView from '../components/user/PortfolioView.vue'
-import MessagesView from '../components/user/MessagesView.vue'
-import NotificationsView from '../components/user/NotificationsView.vue'
-import SocialPostView from '../components/user/SocialPostView.vue'
-import AccountSettingsView from '../components/user/AccountSettingsView.vue'
-import NewsView from '../components/user/NewsView.vue'
-import NewsDetailView from '../components/user/NewsDetailView.vue'
-import RankingsView from '../components/user/RankingsView.vue'
-import AthleteProfileView from '../components/user/AthleteProfileView.vue'
-import TopProductsView from '../components/user/TopProductsView.vue'
+const UserApp = () => import('../components/user/UserApp.vue')
+const HomeView = () => import('../components/user/HomeView.vue')
+const MapView = () => import('../components/user/MapView.vue')
+const CourtDetailView = () => import('../components/user/CourtDetailView.vue')
+const BookingCheckoutView = () => import('../components/user/BookingCheckoutView.vue')
+const ShopView = () => import('../components/user/ShopView.vue')
+const ProductDetailView = () => import('../components/user/ProductDetailView.vue')
+const CartView = () => import('../components/user/CartView.vue')
+const CheckoutInfoView = () => import('../components/user/CheckoutInfoView.vue')
+const CheckoutConfirmView = () => import('../components/user/CheckoutConfirmView.vue')
+const EquipmentView = () => import('../components/user/EquipmentView.vue')
+const FavoritesView = () => import('../components/user/FavoritesView.vue')
+const ProfileView = () => import('../components/user/ProfileView.vue')
+const PortfolioView = () => import('../components/user/PortfolioView.vue')
+const MessagesView = () => import('../components/user/MessagesView.vue')
+const NotificationsView = () => import('../components/user/NotificationsView.vue')
+const SocialPostView = () => import('../components/user/SocialPostView.vue')
+const AccountSettingsView = () => import('../components/user/AccountSettingsView.vue')
+const NewsView = () => import('../components/user/NewsView.vue')
+const NewsDetailView = () => import('../components/user/NewsDetailView.vue')
+const RankingsView = () => import('../components/user/RankingsView.vue')
+const AthleteProfileView = () => import('../components/user/AthleteProfileView.vue')
+const TopProductsView = () => import('../components/user/TopProductsView.vue')
 
-import AdminApp from '../components/admin/AdminApp.vue'
-import AdminDashboard from '../components/admin/AdminDashboard.vue'
-import CourtsManager from '../components/admin/CourtsManager.vue'
-import ProductsManager from '../components/admin/ProductsManager.vue'
-import MembersManager from '../components/admin/MembersManager.vue'
-import NewsManager from '../components/admin/NewsManager.vue'
-import SocialReportsView from '../components/admin/SocialReportsView.vue'
+const AdminApp = () => import('../components/admin/AdminApp.vue')
+const AdminDashboard = () => import('../components/admin/AdminDashboard.vue')
+const CourtsManager = () => import('../components/admin/CourtsManager.vue')
+const ProductsManager = () => import('../components/admin/ProductsManager.vue')
+const MembersManager = () => import('../components/admin/MembersManager.vue')
+const NewsManager = () => import('../components/admin/NewsManager.vue')
+const SocialReportsView = () => import('../components/admin/SocialReportsView.vue')
 
-import LoginView from '../components/auth/LoginView.vue'
-import RegisterView from '../components/auth/RegisterView.vue'
-import ForgotPasswordView from '../components/auth/ForgotPasswordView.vue'
-import NotFoundView from '../components/common/NotFoundView.vue'
-import TourAssetStudio from '../components/games/tour/TourAssetStudio.vue'
-import CrLobbyView from '../components/games/cr/CrLobbyView.vue'
-import CrRoomView from '../components/games/cr/CrRoomView.vue'
+const LoginView = () => import('../components/auth/LoginView.vue')
+const RegisterView = () => import('../components/auth/RegisterView.vue')
+const ForgotPasswordView = () => import('../components/auth/ForgotPasswordView.vue')
+const NotFoundView = () => import('../components/common/NotFoundView.vue')
+const TourAssetStudio = () => import('../components/games/tour/TourAssetStudio.vue')
+const CrLobbyView = () => import('../components/games/cr/CrLobbyView.vue')
+const CrRoomView = () => import('../components/games/cr/CrRoomView.vue')
 
 const routes = [
   {

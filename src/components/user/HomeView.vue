@@ -188,7 +188,7 @@ onUnmounted(() => {
         :class="c.span === 'full' ? 'nk-card--full' : 'nk-card--half'"
       >
         <div class="nk-card__media">
-          <img :src="c.image" :alt="c.title" loading="lazy" />
+          <img :src="c.image" :alt="c.title" loading="lazy" decoding="async" />
         </div>
         <div class="nk-card__body">
           <p class="nk-card__kicker">{{ c.kicker }}</p>

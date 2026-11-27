@@ -2,7 +2,7 @@
  * Local campaign / mock media from src/assets/uploads.
  * Vite emits hashed asset URLs; JS only holds string paths.
  */
-const modules = import.meta.glob('../assets/uploads/background*.jpg', {
+const modules = import.meta.glob('../assets/uploads/background*.webp', {
   eager: true,
   import: 'default',
 })
@@ -15,7 +15,7 @@ function sortKeys(keys) {
   })
 }
 
-/** background1.jpg … background10.jpg */
+/** background1.webp … background10.webp */
 export const UPLOADS = sortKeys(Object.keys(modules)).map((k) => modules[k])
 
 /** 1-based: upload(1) → background1 */

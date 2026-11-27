@@ -1,7 +1,7 @@
 # Character cutout provenance
 
 Source: `pawns.jpg` in this directory. The original JPG is preserved.
-Output: `pawns-transparent.png`. Used by `CrAssetPawn.vue` for the original four character appearances.
+The transparent PNG output was converted losslessly to `pawns-transparent.webp`. Used by `CrAssetPawn.vue` for the original four character appearances.
 Tool: built-in image generation, background extraction with transparent output.
 
 Exact prompt:

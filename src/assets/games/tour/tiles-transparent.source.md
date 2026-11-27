@@ -1,6 +1,6 @@
 # Transparent tile artwork
 
-Source: `tiles.jpg` (preserved). Output: `tiles-transparent.png`.
+Source: `tiles.jpg` (preserved). The transparent PNG output was converted losslessly to `tiles-transparent.webp` for delivery.
 Tool: built-in image generation, background extraction with transparent alpha.
 The game crops this atlas directly; opaque JPG backgrounds and CSS fade masks are no longer used for board props.
 

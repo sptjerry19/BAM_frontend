@@ -189,7 +189,7 @@ function openAthlete(a) {
               </td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-3">
-                  <img :src="row.avatar" :alt="row.name" class="w-10 h-10 rounded-full object-cover" />
+                  <img :src="row.avatar" :alt="row.name" class="w-10 h-10 rounded-full object-cover" loading="lazy" decoding="async" />
                   <div>
                     <p class="font-semibold text-[14px]">{{ row.name }}</p>
                     <p class="text-[12px]" style="color: var(--text-3)">@{{ row.handle }}</p>
@@ -222,7 +222,7 @@ function openAthlete(a) {
               </td>
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-3">
-                  <img :src="row.avatar" :alt="row.name" class="w-10 h-10 rounded-full object-cover" />
+                  <img :src="row.avatar" :alt="row.name" class="w-10 h-10 rounded-full object-cover" loading="lazy" decoding="async" />
                   <span class="font-semibold text-[14px]">{{ row.name }}</span>
                 </div>
               </td>

@@ -31,7 +31,7 @@ const emptyForm = () => ({
   rating: 4,
   phone: '',
   hours: '6:00 - 22:00',
-  image: 'https://jbam.id.vn/src/assets/uploads/background1.jpg',
+  image: '/images/court-default.webp',
   x: 50,
   y: 50,
   lat: 21.0278,
